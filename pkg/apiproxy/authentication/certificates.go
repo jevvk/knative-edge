@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -16,19 +15,6 @@ import (
 	"math/big"
 	"time"
 )
-
-func publicKey(priv interface{}) interface{} {
-	switch k := priv.(type) {
-	case *rsa.PrivateKey:
-		return &k.PublicKey
-
-	case *ecdsa.PrivateKey:
-		return &k.PublicKey
-
-	default:
-		return nil
-	}
-}
 
 // func pemBlockForKey(priv interface{}) *pem.Block {
 // 	switch k := priv.(type) {
@@ -54,13 +40,26 @@ func GenerateKey() (*ecdsa.PrivateKey, error) {
 	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 }
 
-func GenerateCA(pk *ecdsa.PrivateKey) (*string, error) {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+func EncodeKey(key *ecdsa.PrivateKey) (*string, error) {
+	if key == nil {
+		return nil, errors.New("no key provided")
+	}
+
+	keyBytes, err := x509.MarshalECPrivateKey(key)
 
 	if err != nil {
 		return nil, err
 	}
 
+	out := &bytes.Buffer{}
+	pem.Encode(out, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyBytes})
+
+	cert_string := out.String()
+
+	return &cert_string, nil
+}
+
+func GenerateCA(pk *ecdsa.PrivateKey) (*string, error) {
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
@@ -72,6 +71,7 @@ func GenerateCA(pk *ecdsa.PrivateKey) (*string, error) {
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
+		IsCA:                  true,
 	}
 
 	/*
@@ -89,14 +89,14 @@ func GenerateCA(pk *ecdsa.PrivateKey) (*string, error) {
 	   }
 	*/
 
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(key), key)
+	cert_bytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &pk.PublicKey, pk)
 
 	if err != nil {
 		log.Fatal("Failed to create certificate", err)
 	}
 
 	out := &bytes.Buffer{}
-	pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: cert_bytes})
 
 	cert_string := out.String()
 
@@ -117,6 +117,12 @@ func SignToken(token string, key *ecdsa.PrivateKey) (*string, error) {
 }
 
 func VerifyTokenSignature(key *ecdsa.PublicKey, token string, signature string) bool {
+	signatureBytes, err := hex.DecodeString(signature)
+
+	if err != nil {
+		return false
+	}
+
 	hash := sha256.Sum256([]byte(token))
-	return ecdsa.VerifyASN1(key, hash[:], []byte(signature))
+	return ecdsa.VerifyASN1(key, hash[:], signatureBytes)
 }

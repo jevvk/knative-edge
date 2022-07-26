@@ -2,7 +2,7 @@ package authentication
 
 import (
 	"crypto/x509"
-	"log"
+	"encoding/pem"
 	"testing"
 
 	randstr "github.com/thanhpk/randstr"
@@ -21,13 +21,16 @@ func TestCertificateGeneration(t *testing.T) {
 		t.Fatal("couldn't generate certificate: ", err)
 	}
 
-	log.Print("hello")
-	log.Print(*cert_string)
+	pemBlock, _ := pem.Decode([]byte(*cert_string))
 
-	_, err = x509.ParseCertificate([]byte(*cert_string))
+	if pemBlock == nil {
+		t.Fatal("no PEM block found")
+	}
+
+	_, err = x509.ParseCertificate(pemBlock.Bytes)
 
 	if err != nil {
-		log.Fatal("failed to parse certificate: ", err)
+		t.Fatal("failed to parse certificate: ", err)
 	}
 }
 
@@ -49,7 +52,7 @@ func TestTokenSigningRandom(t *testing.T) {
 		t.Fatal("signature is empty")
 	}
 
-	if VerifyTokenSignature(&key.PublicKey, token, *token_signature) {
+	if !VerifyTokenSignature(&key.PublicKey, token, *token_signature) {
 		t.Fatal("signatures doesn't match")
 	}
 }

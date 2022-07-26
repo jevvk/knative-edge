@@ -1,0 +1,12 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: knative-edge-watcher
+  labels:
+    edge.knative.dev/controller: "true"
+    app.kubernetes.io/version: devel
+    app.kubernetes.io/name: knative-edge
+rules:
+  - apiGroups: ["edge.knative.dev"]
+    resources: ["namespaces", "secrets", "configmaps", "kservices"]
+    verbs: ["get", "list", "patch", "watch"]

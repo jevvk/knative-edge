@@ -1,14 +1,21 @@
 package authentication
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"strings"
 
 	randstr "github.com/thanhpk/randstr"
+
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 func unpack(src []string, dst ...*string) {
@@ -22,6 +29,50 @@ type Authenticator struct {
 	key         *ecdsa.PrivateKey
 	caSignature string
 	ca          *x509.Certificate
+}
+
+func Initialize(ctx context.Context, secretName string) {
+	config, err := rest.InClusterConfig()
+
+	if err != nil {
+		panic(fmt.Errorf("couldn't retrieve kubernetes client: %s", err))
+	}
+
+	kubeClient := kubernetes.NewForConfigOrDie(config)
+	secrets := kubeClient.CoreV1().Secrets(Namespace)
+
+	secret, err := secrets.Get(ctx, secretName, metaV1.GetOptions{})
+
+	if apierrs.IsNotFound(err) {
+		privateKey, err := GenerateKey()
+
+		if err != nil {
+			panic(fmt.Errorf("couldn't generate private key: %s", err))
+		}
+
+		privateKeyPem, err := EncodeKey(privateKey)
+
+		if err != nil {
+			panic(fmt.Errorf("couldn't encode private key: %s", err))
+		}
+
+		caPem, err := GenerateCA(privateKey)
+
+		if err != nil {
+			panic(fmt.Errorf("couldn't generate certificate authority: %s", err))
+		}
+
+		secret.Data[PrivateKeyFile] = []byte(*privateKeyPem)
+		secret.Data[CertificateAuthorityFile] = []byte(*caPem)
+
+		_, err = secrets.Update(ctx, secret, metaV1.UpdateOptions{})
+
+		if err != nil {
+			panic(fmt.Errorf("couldn't update secret: %s", err))
+		}
+	} else if err != nil {
+		panic(fmt.Errorf("couldn't retrieve private key: %s", err))
+	}
 }
 
 func New(certificate string, key string) (*Authenticator, error) {

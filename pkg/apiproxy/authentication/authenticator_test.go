@@ -57,6 +57,8 @@ func TestAuthorizer(t *testing.T) {
 		t.Fatal("invalid token shouldn't be authorized")
 	}
 
+	fmt.Print(*token)
+
 	tokenParts := strings.Split(*token, ":")
 
 	token4 := fmt.Sprintf("%s:%s:%s", tokenParts[0], tokenParts[1], "foo")

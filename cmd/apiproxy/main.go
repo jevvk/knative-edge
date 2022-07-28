@@ -2,14 +2,19 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/kelseyhightower/envconfig"
 	"go.uber.org/zap"
 
+	"knative.dev/edge/pkg/apiproxy/authentication"
 	activatorconfig "knative.dev/edge/pkg/apiproxy/config"
+	"knative.dev/edge/pkg/apiproxy/websockets"
 	"knative.dev/edge/pkg/networking"
 	kubeclient "knative.dev/pkg/client/injection/kube/client"
 	"knative.dev/pkg/configmap"
@@ -33,13 +38,11 @@ const (
 )
 
 type config struct {
-	PodName string `split_words:"true" required:"true"`
-	PodIP   string `split_words:"true" required:"true"`
-
-	// These are here to allow configuring higher values of keep-alive for larger environments.
-	// TODO: run loadtests using these flags to determine optimal default values.
-	MaxIdleProxyConns        int `split_words:"true" default:"1000"`
-	MaxIdleProxyConnsPerHost int `split_words:"true" default:"100"`
+	PodName                  string `split_words:"true" required:"true"`
+	PodIP                    string `split_words:"true" required:"true"`
+	EdgeAuthenticationSecret string `split_words:"true" required:"true"`
+	EdgeCertificateAuthority string `split_words:"true" required:"true"`
+	EdgePrivateKey           string `split_words:"true" required:"true"`
 }
 
 func main() {
@@ -47,12 +50,33 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	sigCtx := signals.NewContext()
+	var initialize bool
+
+	flag.BoolVar(&initialize, "init", false, "initialiaze apiproxy mandatory components")
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [-init]", os.Args[0])
+		flag.PrintDefaults()
+	}
+	flag.Parse()
 
 	var env config
 	if err := envconfig.Process("", &env); err != nil {
 		log.Fatal("Failed to process env: ", err)
 	}
+
+	if initialize {
+		setup(ctx, env)
+	} else {
+		serve(ctx, env)
+	}
+}
+
+func setup(ctx context.Context, env config) {
+	authentication.Initialize(ctx, env.EdgeAuthenticationSecret)
+}
+
+func serve(ctx context.Context, env config) {
+	sigCtx := signals.NewContext()
 
 	kubeClient := kubeclient.Get(ctx)
 
@@ -73,7 +97,8 @@ func main() {
 	servers := map[string]*http.Server{
 		// "http1": pkgnet.NewServer(":"+strconv.Itoa(networking.HTTPPort), ah),
 		// "h2c":     pkgnet.NewServer(":"+strconv.Itoa(networking.BackendHTTP2Port), ah),
-		"profile": profiling.NewServer(profilingHandler),
+		"websockets": websockets.NewServer(":"+strconv.Itoa(networking.HTTPPort), nil),
+		"profile":    profiling.NewServer(profilingHandler),
 	}
 
 	errCh := make(chan error, len(servers))

@@ -7,6 +7,9 @@ metadata:
     app.kubernetes.io/version: devel
     app.kubernetes.io/name: knative-edge
 rules:
-  - apiGroups: ["edge.knative.dev"]
-    resources: ["namespaces", "secrets", "configmaps", "kservices"]
+  - apiGroups: [""]
+    resources: ["namespaces", "secrets", "configmaps"]
+    verbs: ["get", "list", "create", "update", "delete", "patch"]
+  - apiGroups: ["serving.knative.dev"]
+    resources: ["kservices"]
     verbs: ["get", "list", "create", "update", "delete", "patch"]

@@ -1,12 +1,13 @@
-kind: ClusterRole
+kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: knative-edge-manager
+  name: manager
+  namespace: knative-edge
   labels:
     edge.knative.dev/controller: "true"
     app.kubernetes.io/version: devel
     app.kubernetes.io/name: knative-edge
 rules:
-- apiGroups: ["edge.kative.dev"]
+  - apiGroups: ["edge.kative.dev"]
     resources: ["edgeclusters"]
-    verbs: ["get", "list", "update", "patch"]
+    verbs: ["get", "list", "update", "patch", "watch"]

@@ -41,8 +41,6 @@ type config struct {
 	PodName                  string `split_words:"true" required:"true"`
 	PodIP                    string `split_words:"true" required:"true"`
 	EdgeAuthenticationSecret string `split_words:"true" required:"true"`
-	EdgeCertificateAuthority string `split_words:"true" required:"true"`
-	EdgePrivateKey           string `split_words:"true" required:"true"`
 }
 
 func main() {

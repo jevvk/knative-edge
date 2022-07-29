@@ -62,10 +62,13 @@ func Initialize(ctx context.Context, secretName string) {
 			panic(fmt.Errorf("couldn't generate certificate authority: %s", err))
 		}
 
+		secret.Name = secretName
+		secret.Namespace = Namespace
+		secret.Data = make(map[string][]byte)
 		secret.Data[PrivateKeyFile] = []byte(*privateKeyPem)
 		secret.Data[CertificateAuthorityFile] = []byte(*caPem)
 
-		_, err = secrets.Update(ctx, secret, metaV1.UpdateOptions{})
+		_, err = secrets.Create(ctx, secret, metaV1.CreateOptions{})
 
 		if err != nil {
 			panic(fmt.Errorf("couldn't update secret: %s", err))

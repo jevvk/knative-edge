@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: apiproxy-job
+  namespace: knative-edge
+  labels:
+    app: "apiproxy"
+    app.kubernetes.io/component: apiproxy-job
+    app.kubernetes.io/name: knative-edge
+    app.kubernetes.io/version: devel
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        app: "apiproxy"
+        app.kubernetes.io/component: apiproxy-job
+        app.kubernetes.io/name: knative-edge
+        app.kubernetes.io/version: devel
+    spec:
+      serviceAccountName: apiproxy
+      containers:
+      - name: apiproxy
+        image: ko://knative.dev/edge/cmd/apiproxy
+        args: ["-init"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: EDGE_AUTHENTICATION_SECRET
+          value: edge-authentication
+      restartPolicy: Never
+  backoffLimit: 10

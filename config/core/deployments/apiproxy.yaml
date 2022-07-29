@@ -20,10 +20,10 @@ spec:
         app: apiproxy
         role: apiproxy
         app.kubernetes.io/component: apiproxy
-        app.kubernetes.io/name: knative-serving
+        app.kubernetes.io/name: knative-edge
         app.kubernetes.io/version: devel
     spec:
-      serviceAccountName: controller
+      serviceAccountName: apiproxy
       containers:
       - name: apiproxy
         image: ko://knative.dev/edge/cmd/apiproxy

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	edgev1 "github.com/jevvk/knative-edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
+	edgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
 )
 
 type Interface interface {

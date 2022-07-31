@@ -5,9 +5,9 @@ package v1
 import (
 	"net/http"
 
-	v1 "github.com/jevvk/knative-edge/pkg/apis/edge.knative.dev/v1"
-	"github.com/jevvk/knative-edge/pkg/client/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
+	v1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
+	"knative.dev/edge/pkg/client/clientset/versioned/scheme"
 )
 
 type EdgeV1Interface interface {

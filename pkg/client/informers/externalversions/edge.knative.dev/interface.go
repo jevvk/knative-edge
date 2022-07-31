@@ -3,8 +3,8 @@
 package edge
 
 import (
-	v1 "github.com/jevvk/knative-edge/pkg/client/informers/externalversions/edge.knative.dev/v1"
-	internalinterfaces "github.com/jevvk/knative-edge/pkg/client/informers/externalversions/internalinterfaces"
+	v1 "knative.dev/edge/pkg/client/informers/externalversions/edge.knative.dev/v1"
+	internalinterfaces "knative.dev/edge/pkg/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

@@ -3,7 +3,7 @@
 CURRENT_DIR=$(pwd)
 GEN_DIR=$(dirname $0)
 
-PROJECT_MODULE="github.com/jevvk/knative-edge"
+PROJECT_MODULE="knative.dev/edge"
 IMAGE_NAME="kubernetes-codegen:latest"
 
 CUSTOM_RESOURCE_NAME="edge.knative.dev"

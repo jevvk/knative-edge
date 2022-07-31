@@ -6,14 +6,14 @@ import (
 	"context"
 	time "time"
 
-	edgeknativedevv1 "github.com/jevvk/knative-edge/pkg/apis/edge.knative.dev/v1"
-	versioned "github.com/jevvk/knative-edge/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/jevvk/knative-edge/pkg/client/informers/externalversions/internalinterfaces"
-	v1 "github.com/jevvk/knative-edge/pkg/client/listers/edge.knative.dev/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
+	edgeknativedevv1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
+	versioned "knative.dev/edge/pkg/client/clientset/versioned"
+	internalinterfaces "knative.dev/edge/pkg/client/informers/externalversions/internalinterfaces"
+	v1 "knative.dev/edge/pkg/client/listers/edge.knative.dev/v1"
 )
 
 // EdgeClusterInformer provides access to a shared informer and lister for

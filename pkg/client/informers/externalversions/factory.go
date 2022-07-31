@@ -7,13 +7,13 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/jevvk/knative-edge/pkg/client/clientset/versioned"
-	edgeknativedev "github.com/jevvk/knative-edge/pkg/client/informers/externalversions/edge.knative.dev"
-	internalinterfaces "github.com/jevvk/knative-edge/pkg/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
+	versioned "knative.dev/edge/pkg/client/clientset/versioned"
+	edgeknativedev "knative.dev/edge/pkg/client/informers/externalversions/edge.knative.dev"
+	internalinterfaces "knative.dev/edge/pkg/client/informers/externalversions/internalinterfaces"
 )
 
 // SharedInformerOption defines the functional option type for SharedInformerFactory.

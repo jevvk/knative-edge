@@ -3,9 +3,9 @@
 package fake
 
 import (
-	v1 "github.com/jevvk/knative-edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
+	v1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
 )
 
 type FakeEdgeV1 struct {

@@ -3,14 +3,14 @@
 package fake
 
 import (
-	clientset "github.com/jevvk/knative-edge/pkg/client/clientset/versioned"
-	edgev1 "github.com/jevvk/knative-edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
-	fakeedgev1 "github.com/jevvk/knative-edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/testing"
+	clientset "knative.dev/edge/pkg/client/clientset/versioned"
+	edgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
+	fakeedgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1/fake"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.

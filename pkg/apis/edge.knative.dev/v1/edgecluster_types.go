@@ -29,3 +29,11 @@ type EdgeClusterStatus struct {
 	// The authentication token of the EdgeCluster. This token is cannot be used in its raw form, as it doesn't include the signature or certificate authority hash.
 	AuthenticationToken string
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type EdgeClusterList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []EdgeCluster `json:"items"`
+}

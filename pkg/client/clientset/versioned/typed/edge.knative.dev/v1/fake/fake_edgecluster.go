@@ -5,13 +5,13 @@ package fake
 import (
 	"context"
 
-	edgeknativedevv1 "github.com/jevvk/knative-edge/pkg/apis/edge.knative.dev/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
+	edgeknativedevv1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
 )
 
 // FakeEdgeClusters implements EdgeClusterInterface

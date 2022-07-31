@@ -6,12 +6,12 @@ import (
 	"context"
 	"time"
 
-	v1 "github.com/jevvk/knative-edge/pkg/apis/edge.knative.dev/v1"
-	scheme "github.com/jevvk/knative-edge/pkg/client/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
+	v1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
+	scheme "knative.dev/edge/pkg/client/clientset/versioned/scheme"
 )
 
 // EdgeClustersGetter has a method to return a EdgeClusterInterface.

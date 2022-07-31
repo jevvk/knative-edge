@@ -3,12 +3,12 @@
 package scheme
 
 import (
-	edgev1 "github.com/jevvk/knative-edge/pkg/apis/edge.knative.dev/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	edgev1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
 )
 
 var Scheme = runtime.NewScheme()

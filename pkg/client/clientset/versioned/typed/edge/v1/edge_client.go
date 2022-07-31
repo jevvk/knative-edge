@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	rest "k8s.io/client-go/rest"
-	v1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
+	v1 "knative.dev/edge/pkg/apis/edge/v1"
 	"knative.dev/edge/pkg/client/clientset/versioned/scheme"
 )
 

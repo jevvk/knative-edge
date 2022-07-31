@@ -3,7 +3,7 @@
 package edge
 
 import (
-	v1 "knative.dev/edge/pkg/client/informers/externalversions/edge.knative.dev/v1"
+	v1 "knative.dev/edge/pkg/client/informers/externalversions/edge/v1"
 	internalinterfaces "knative.dev/edge/pkg/client/informers/externalversions/internalinterfaces"
 )
 

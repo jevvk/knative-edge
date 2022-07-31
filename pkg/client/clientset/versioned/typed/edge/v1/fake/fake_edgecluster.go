@@ -11,7 +11,7 @@ import (
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
-	edgeknativedevv1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
+	edgev1 "knative.dev/edge/pkg/apis/edge/v1"
 )
 
 // FakeEdgeClusters implements EdgeClusterInterface
@@ -24,19 +24,19 @@ var edgeclustersResource = schema.GroupVersionResource{Group: "edge.knative.dev"
 var edgeclustersKind = schema.GroupVersionKind{Group: "edge.knative.dev", Version: "v1", Kind: "EdgeCluster"}
 
 // Get takes name of the edgeCluster, and returns the corresponding edgeCluster object, and an error if there is any.
-func (c *FakeEdgeClusters) Get(ctx context.Context, name string, options v1.GetOptions) (result *edgeknativedevv1.EdgeCluster, err error) {
+func (c *FakeEdgeClusters) Get(ctx context.Context, name string, options v1.GetOptions) (result *edgev1.EdgeCluster, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(edgeclustersResource, name), &edgeknativedevv1.EdgeCluster{})
+		Invokes(testing.NewRootGetAction(edgeclustersResource, name), &edgev1.EdgeCluster{})
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*edgeknativedevv1.EdgeCluster), err
+	return obj.(*edgev1.EdgeCluster), err
 }
 
 // List takes label and field selectors, and returns the list of EdgeClusters that match those selectors.
-func (c *FakeEdgeClusters) List(ctx context.Context, opts v1.ListOptions) (result *edgeknativedevv1.EdgeClusterList, err error) {
+func (c *FakeEdgeClusters) List(ctx context.Context, opts v1.ListOptions) (result *edgev1.EdgeClusterList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(edgeclustersResource, edgeclustersKind, opts), &edgeknativedevv1.EdgeClusterList{})
+		Invokes(testing.NewRootListAction(edgeclustersResource, edgeclustersKind, opts), &edgev1.EdgeClusterList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -45,8 +45,8 @@ func (c *FakeEdgeClusters) List(ctx context.Context, opts v1.ListOptions) (resul
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &edgeknativedevv1.EdgeClusterList{ListMeta: obj.(*edgeknativedevv1.EdgeClusterList).ListMeta}
-	for _, item := range obj.(*edgeknativedevv1.EdgeClusterList).Items {
+	list := &edgev1.EdgeClusterList{ListMeta: obj.(*edgev1.EdgeClusterList).ListMeta}
+	for _, item := range obj.(*edgev1.EdgeClusterList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -61,29 +61,29 @@ func (c *FakeEdgeClusters) Watch(ctx context.Context, opts v1.ListOptions) (watc
 }
 
 // Create takes the representation of a edgeCluster and creates it.  Returns the server's representation of the edgeCluster, and an error, if there is any.
-func (c *FakeEdgeClusters) Create(ctx context.Context, edgeCluster *edgeknativedevv1.EdgeCluster, opts v1.CreateOptions) (result *edgeknativedevv1.EdgeCluster, err error) {
+func (c *FakeEdgeClusters) Create(ctx context.Context, edgeCluster *edgev1.EdgeCluster, opts v1.CreateOptions) (result *edgev1.EdgeCluster, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(edgeclustersResource, edgeCluster), &edgeknativedevv1.EdgeCluster{})
+		Invokes(testing.NewRootCreateAction(edgeclustersResource, edgeCluster), &edgev1.EdgeCluster{})
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*edgeknativedevv1.EdgeCluster), err
+	return obj.(*edgev1.EdgeCluster), err
 }
 
 // Update takes the representation of a edgeCluster and updates it. Returns the server's representation of the edgeCluster, and an error, if there is any.
-func (c *FakeEdgeClusters) Update(ctx context.Context, edgeCluster *edgeknativedevv1.EdgeCluster, opts v1.UpdateOptions) (result *edgeknativedevv1.EdgeCluster, err error) {
+func (c *FakeEdgeClusters) Update(ctx context.Context, edgeCluster *edgev1.EdgeCluster, opts v1.UpdateOptions) (result *edgev1.EdgeCluster, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(edgeclustersResource, edgeCluster), &edgeknativedevv1.EdgeCluster{})
+		Invokes(testing.NewRootUpdateAction(edgeclustersResource, edgeCluster), &edgev1.EdgeCluster{})
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*edgeknativedevv1.EdgeCluster), err
+	return obj.(*edgev1.EdgeCluster), err
 }
 
 // Delete takes name of the edgeCluster and deletes it. Returns an error if one occurs.
 func (c *FakeEdgeClusters) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(edgeclustersResource, name, opts), &edgeknativedevv1.EdgeCluster{})
+		Invokes(testing.NewRootDeleteActionWithOptions(edgeclustersResource, name, opts), &edgev1.EdgeCluster{})
 	return err
 }
 
@@ -91,16 +91,16 @@ func (c *FakeEdgeClusters) Delete(ctx context.Context, name string, opts v1.Dele
 func (c *FakeEdgeClusters) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	action := testing.NewRootDeleteCollectionAction(edgeclustersResource, listOpts)
 
-	_, err := c.Fake.Invokes(action, &edgeknativedevv1.EdgeClusterList{})
+	_, err := c.Fake.Invokes(action, &edgev1.EdgeClusterList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched edgeCluster.
-func (c *FakeEdgeClusters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *edgeknativedevv1.EdgeCluster, err error) {
+func (c *FakeEdgeClusters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *edgev1.EdgeCluster, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(edgeclustersResource, name, pt, data, subresources...), &edgeknativedevv1.EdgeCluster{})
+		Invokes(testing.NewRootPatchSubresourceAction(edgeclustersResource, name, pt, data, subresources...), &edgev1.EdgeCluster{})
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*edgeknativedevv1.EdgeCluster), err
+	return obj.(*edgev1.EdgeCluster), err
 }

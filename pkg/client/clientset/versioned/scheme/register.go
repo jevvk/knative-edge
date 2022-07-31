@@ -8,7 +8,7 @@ import (
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	edgev1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
+	edgev1 "knative.dev/edge/pkg/apis/edge/v1"
 )
 
 var Scheme = runtime.NewScheme()

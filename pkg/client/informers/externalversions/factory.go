@@ -12,7 +12,7 @@ import (
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 	versioned "knative.dev/edge/pkg/client/clientset/versioned"
-	edgeknativedev "knative.dev/edge/pkg/client/informers/externalversions/edge.knative.dev"
+	edge "knative.dev/edge/pkg/client/informers/externalversions/edge"
 	internalinterfaces "knative.dev/edge/pkg/client/informers/externalversions/internalinterfaces"
 )
 
@@ -156,9 +156,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Edge() edgeknativedev.Interface
+	Edge() edge.Interface
 }
 
-func (f *sharedInformerFactory) Edge() edgeknativedev.Interface {
-	return edgeknativedev.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Edge() edge.Interface {
+	return edge.New(f, f.namespace, f.tweakListOptions)
 }

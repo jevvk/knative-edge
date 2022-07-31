@@ -5,7 +5,7 @@ package fake
 import (
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
-	v1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
+	v1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge/v1"
 )
 
 type FakeEdgeV1 struct {

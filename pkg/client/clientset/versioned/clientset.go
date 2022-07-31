@@ -9,7 +9,7 @@ import (
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
-	edgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
+	edgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge/v1"
 )
 
 type Interface interface {

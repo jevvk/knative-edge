@@ -10,10 +10,10 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
-	edgeknativedevv1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
+	edgev1 "knative.dev/edge/pkg/apis/edge/v1"
 	versioned "knative.dev/edge/pkg/client/clientset/versioned"
 	internalinterfaces "knative.dev/edge/pkg/client/informers/externalversions/internalinterfaces"
-	v1 "knative.dev/edge/pkg/client/listers/edge.knative.dev/v1"
+	v1 "knative.dev/edge/pkg/client/listers/edge/v1"
 )
 
 // EdgeClusterInformer provides access to a shared informer and lister for
@@ -54,7 +54,7 @@ func NewFilteredEdgeClusterInformer(client versioned.Interface, resyncPeriod tim
 				return client.EdgeV1().EdgeClusters().Watch(context.TODO(), options)
 			},
 		},
-		&edgeknativedevv1.EdgeCluster{},
+		&edgev1.EdgeCluster{},
 		resyncPeriod,
 		indexers,
 	)
@@ -65,7 +65,7 @@ func (f *edgeClusterInformer) defaultInformer(client versioned.Interface, resync
 }
 
 func (f *edgeClusterInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&edgeknativedevv1.EdgeCluster{}, f.defaultInformer)
+	return f.factory.InformerFor(&edgev1.EdgeCluster{}, f.defaultInformer)
 }
 
 func (f *edgeClusterInformer) Lister() v1.EdgeClusterLister {

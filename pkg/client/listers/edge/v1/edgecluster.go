@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
-	v1 "knative.dev/edge/pkg/apis/edge.knative.dev/v1"
+	v1 "knative.dev/edge/pkg/apis/edge/v1"
 )
 
 // EdgeClusterLister helps list EdgeClusters.

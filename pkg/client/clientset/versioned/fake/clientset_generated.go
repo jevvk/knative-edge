@@ -9,8 +9,8 @@ import (
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/testing"
 	clientset "knative.dev/edge/pkg/client/clientset/versioned"
-	edgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1"
-	fakeedgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge.knative.dev/v1/fake"
+	edgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge/v1"
+	fakeedgev1 "knative.dev/edge/pkg/client/clientset/versioned/typed/edge/v1/fake"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.

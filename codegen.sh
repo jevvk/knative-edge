@@ -6,7 +6,7 @@ GEN_DIR=$(dirname $0)
 PROJECT_MODULE="knative.dev/edge"
 IMAGE_NAME="kubernetes-codegen:latest"
 
-CUSTOM_RESOURCE_NAME="edge.knative.dev"
+CUSTOM_RESOURCE_NAME="edge"
 CUSTOM_RESOURCE_VERSION="v1"
 
 echo "Building codegen Docker image..."

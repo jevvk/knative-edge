@@ -32,9 +32,6 @@ import (
 
 const (
 	component = "apiproxy"
-
-	// The port on which autoscaler WebSocket server listens.
-	autoscalerPort = ":8080"
 )
 
 type config struct {
@@ -67,6 +64,8 @@ func main() {
 	} else {
 		serve(ctx, env)
 	}
+
+	log.Printf("Exiting.")
 }
 
 func setup(ctx context.Context, env config) {

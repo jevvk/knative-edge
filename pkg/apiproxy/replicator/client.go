@@ -9,7 +9,3 @@ type Client struct {
 	localResourceVersion  string
 	remoteResourceVersion string
 }
-
-func (c *Client) PushUpdate() {
-
-}

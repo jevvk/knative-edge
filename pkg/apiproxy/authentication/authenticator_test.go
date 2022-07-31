@@ -25,7 +25,7 @@ func TestAuthorizer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	auth, err := New(*certString, *keyString)
+	auth, err := New([]byte(*certString), []byte(*keyString))
 
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestAuthorizer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	auth2, err := New(*certString2, *keyString2)
+	auth2, err := New([]byte(*certString2), []byte(*keyString2))
 
 	if err != nil {
 		t.Fatal(err)
@@ -145,7 +145,7 @@ func TestAuthenticatorConstructor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = New(*certString, *keyString)
+	_, err = New([]byte(*certString), []byte(*keyString))
 
 	if err != nil {
 		t.Fatal(err)
@@ -165,7 +165,7 @@ func TestAuthenticatorConstructor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = New(*certString, *keyString2)
+	_, err = New([]byte(*certString), []byte(*keyString2))
 
 	if err == nil {
 		t.Fatal("certificate and private key should match")

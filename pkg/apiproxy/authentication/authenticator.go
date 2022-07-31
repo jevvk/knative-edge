@@ -8,6 +8,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"strings"
 
 	randstr "github.com/thanhpk/randstr"
@@ -44,6 +46,8 @@ func Initialize(ctx context.Context, secretName string) {
 	secret, err := secrets.Get(ctx, secretName, metaV1.GetOptions{})
 
 	if apierrs.IsNotFound(err) {
+		log.Printf("Couldn't find secrets/%s in namespaces/%s. A new private key and certificate will be generated.", secretName, Namespace)
+
 		privateKey, err := GenerateKey()
 
 		if err != nil {
@@ -73,13 +77,33 @@ func Initialize(ctx context.Context, secretName string) {
 		if err != nil {
 			panic(fmt.Errorf("couldn't update secret: %s", err))
 		}
+
+		log.Printf("New secret created.")
 	} else if err != nil {
 		panic(fmt.Errorf("couldn't retrieve private key: %s", err))
+	} else {
+		log.Printf("Already found secrets/%s in namespaces/%s.", secretName, Namespace)
 	}
 }
 
-func New(certificate string, key string) (*Authenticator, error) {
-	pemBlock, _ := pem.Decode([]byte(certificate))
+func NewFromLocalFiles() (*Authenticator, error) {
+	certificate, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", AuthenticationPath, CertificateAuthorityFile))
+
+	if err != nil {
+		return nil, fmt.Errorf("couldn't read certificate authority: %s", err)
+	}
+
+	key, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", AuthenticationPath, PrivateKeyFile))
+
+	if err != nil {
+		return nil, fmt.Errorf("couldn't read private key: %s", err)
+	}
+
+	return New(certificate, key)
+}
+
+func New(certificate []byte, key []byte) (*Authenticator, error) {
+	pemBlock, _ := pem.Decode(certificate)
 
 	if pemBlock == nil {
 		return nil, errors.New("invalid certificate provided")
@@ -91,7 +115,7 @@ func New(certificate string, key string) (*Authenticator, error) {
 		return nil, err
 	}
 
-	pemBlock, _ = pem.Decode([]byte(key))
+	pemBlock, _ = pem.Decode(key)
 
 	if pemBlock == nil {
 		return nil, errors.New("invalid private key provided")

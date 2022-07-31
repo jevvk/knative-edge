@@ -1,0 +1,12 @@
+FROM golang:1.18.4
+
+ENV GO111MODULE=off
+
+RUN go get k8s.io/code-generator; exit 0
+RUN go get k8s.io/apimachinery; exit 0
+RUN go get k8s.io/gengo; exit 0
+
+# RUN cat /go/src/k8s.io/gengo/boilerplate/boilerplate.go.txt; exit 1
+RUN echo "" > /go/fuckyourself; chmod 777 /go/fuckyourself
+
+WORKDIR /go

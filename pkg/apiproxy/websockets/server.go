@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-
 	"github.com/gorilla/websocket"
 )
 
@@ -18,11 +15,8 @@ type handler struct {
 	next WebsocketHandler
 }
 
-func NewServer(addr string, h WebsocketHandler) *http.Server {
-	return &http.Server{
-		Addr:    addr,
-		Handler: h2c.NewHandler(&handler{next: h}, &http2.Server{}),
-	}
+func NewHandler(h WebsocketHandler) *handler {
+	return &handler{next: h}
 }
 
 var upgrader = websocket.Upgrader{}

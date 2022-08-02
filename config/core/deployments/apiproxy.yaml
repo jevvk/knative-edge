@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       annotations:
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        # cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: apiproxy
         role: apiproxy
@@ -57,12 +57,6 @@ spec:
         - name: edge-authentication
           mountPath: "/var/run/secrets/knative.dev/edge/authentication/"
           readOnly: true
-        
-        volumes:
-        - name: edge-authentication
-          secret:
-            secretName: edge-authentication
-            optional: false
 
         securityContext:
           allowPrivilegeEscalation: false
@@ -73,16 +67,15 @@ spec:
             - all
 
         ports:
-        - name: metrics
-          containerPort: 9090
-        - name: profiling
-          containerPort: 8008
         - name: websocket
           containerPort: 8080
+        - name: healthz
+          containerPort: 3000
 
         readinessProbe:
           httpGet:
-            port: 8012
+            port: 3000
+            path: /healthz
             httpHeaders:
             - name: k-kubelet-probe
               value: "apiproxy"
@@ -90,7 +83,8 @@ spec:
           failureThreshold: 5
         livenessProbe:
           httpGet:
-            port: 8012
+            port: 3000
+            path: /liveness
             httpHeaders:
             - name: k-kubelet-probe
               value: "apiproxy"
@@ -98,36 +92,16 @@ spec:
           failureThreshold: 12
           initialDelaySeconds: 15
       terminationGracePeriodSeconds: 10
-
+      volumes:
+        - name: edge-authentication
+          secret:
+            secretName: edge-authentication
+            optional: false
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: apiproxy-service
-  namespace: knative-edge
-  labels:
-    app: apiproxy
-    app.kubernetes.io/component: apiproxy
-    app.kubernetes.io/version: devel
-    app.kubernetes.io/name: knative-edge
-spec:
-  selector:
-    app: apiproxy
-  ports:
-  # Define metrics and profiling for them to be accessible within service meshes.
-  - name: http-metrics
-    port: 9090
-    targetPort: 9090
-  - name: http-profiling
-    port: 8008
-    targetPort: 8008
-  type: ClusterIP
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: apiproxy-service
+  name: apiproxy-lb
   namespace: knative-edge
   labels:
     app: apiproxy
@@ -141,4 +115,7 @@ spec:
   - name: websocket
     port: 6743
     targetPort: 8080
+  - name: healthz
+    port: 6749
+    targetPort: 3000
   type: LoadBalancer

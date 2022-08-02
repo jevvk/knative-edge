@@ -7,12 +7,13 @@ import (
 
 type handler struct {
 	next http.Handler
-	auth Authenticator
+	auth *Authenticator
 }
 
-func NewHandler(h http.Handler) *handler {
+func (auth *Authenticator) NewHandler(h http.Handler) *handler {
 	return &handler{
 		next: h,
+		auth: auth,
 	}
 }
 

@@ -80,6 +80,17 @@ func (c *FakeEdgeClusters) Update(ctx context.Context, edgeCluster *edgev1.EdgeC
 	return obj.(*edgev1.EdgeCluster), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeEdgeClusters) UpdateStatus(ctx context.Context, edgeCluster *edgev1.EdgeCluster, opts v1.UpdateOptions) (*edgev1.EdgeCluster, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewRootUpdateSubresourceAction(edgeclustersResource, "status", edgeCluster), &edgev1.EdgeCluster{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*edgev1.EdgeCluster), err
+}
+
 // Delete takes name of the edgeCluster and deletes it. Returns an error if one occurs.
 func (c *FakeEdgeClusters) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.

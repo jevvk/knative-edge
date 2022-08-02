@@ -15,6 +15,7 @@ func (in *EdgeCluster) DeepCopyInto(out *EdgeCluster) {
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	in.Spec.DeepCopyInto(&out.Spec)
+	out.Status = in.Status
 	return
 }
 

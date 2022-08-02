@@ -2,6 +2,11 @@ package v1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+const (
+	Disconnected = "disconnected"
+	Connected    = "connected"
+)
+
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -9,7 +14,8 @@ type EdgeCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec EdgeClusterSpec `json:"spec"`
+	Spec   EdgeClusterSpec   `json:"spec"`
+	Status EdgeClusterStatus `json:"status"`
 }
 
 type EdgeClusterSpec struct {

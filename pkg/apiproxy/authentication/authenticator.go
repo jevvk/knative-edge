@@ -141,9 +141,9 @@ func New(certificate []byte, key []byte) (*Authenticator, error) {
 	return &authorizer, nil
 }
 
-func (auth Authenticator) CreateToken() (*string, error) {
+func (auth *Authenticator) CreateToken() (*string, error) {
 	token := randstr.Hex(32)
-	signed_token, err := SignToken(token, auth.key)
+	signature, err := SignToken(token, auth.key)
 
 	if err != nil {
 		return nil, err
@@ -153,20 +153,21 @@ func (auth Authenticator) CreateToken() (*string, error) {
 
 	builder.WriteString(token)
 	builder.WriteString(":")
-	builder.WriteString(*signed_token)
+	builder.WriteString(*signature)
 	builder.WriteString(":")
 	builder.WriteString(auth.caSignature)
 
-	token = builder.String()
+	signedToken := builder.String()
+	auth.store.StoreToken(token)
 
-	return &token, nil
+	return &signedToken, nil
 }
 
-func (auth Authenticator) StoreToken(token string) {
+func (auth *Authenticator) StoreToken(token string) {
 	auth.store.StoreToken(token)
 }
 
-func (auth Authenticator) Authorize(token string) error {
+func (auth *Authenticator) Authorize(token string) error {
 	token = strings.TrimSpace(token)
 
 	if token == "" {
@@ -183,16 +184,16 @@ func (auth Authenticator) Authorize(token string) error {
 
 	unpack(parts, &rawToken, &rawTokenSignature, &caSignature)
 
+	if !auth.store.TokenExists(rawToken) {
+		return errors.New("token is invalid")
+	}
+
 	if caSignature != auth.caSignature {
 		return errors.New("certificate hash doesn't match")
 	}
 
 	if !VerifyTokenSignature(&auth.key.PublicKey, rawToken, rawTokenSignature) {
 		return errors.New("token signature is invalid")
-	}
-
-	if !auth.store.TokenExists(token) {
-		return errors.New("token is invalid")
 	}
 
 	return nil

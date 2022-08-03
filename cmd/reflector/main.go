@@ -1,5 +1,0 @@
-package reflector
-
-func main() {
-
-}

@@ -1,0 +1,6 @@
+apiVersion: cloud.edge.knative.dev/v1
+kind: EdgeCluster
+metadata:
+  name: edgecluster-sample
+spec:
+  # TODO(user): Add fields here

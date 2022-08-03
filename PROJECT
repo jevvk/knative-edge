@@ -1,0 +1,16 @@
+domain: edge.knative.dev
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+projectName: knative-edge
+repo: github.com/jevvk/knative-edge
+resources:
+- api:
+    crdVersion: v1
+  controller: true
+  domain: edge.knative.dev
+  group: cloud
+  kind: EdgeCluster
+  path: edge.knative.dev/pkg/apis/cloud/v1
+  version: v1
+version: "3"

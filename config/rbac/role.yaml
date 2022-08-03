@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - cloud.edge.knative.dev
+  resources:
+  - edgeclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloud.edge.knative.dev
+  resources:
+  - edgeclusters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloud.edge.knative.dev
+  resources:
+  - edgeclusters/status
+  verbs:
+  - get
+  - patch
+  - update

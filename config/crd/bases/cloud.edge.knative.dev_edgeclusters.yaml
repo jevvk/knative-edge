@@ -1,0 +1,71 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
+  name: edgeclusters.cloud.edge.knative.dev
+spec:
+  group: cloud.edge.knative.dev
+  names:
+    kind: EdgeCluster
+    listKind: EdgeClusterList
+    plural: edgeclusters
+    singular: edgecluster
+  scope: Cluster
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: EdgeCluster is the Schema for the edgeclusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: EdgeClusterSpec defines the desired state of EdgeCluster
+            properties:
+              namespaces:
+                description: The list of namespaces which are replicated to the EdgeCluster.
+                items:
+                  type: string
+                type: array
+              region:
+                description: The region where the EdgeCluster is located.
+                type: string
+              zone:
+                description: The zone of the EdgeCluster
+                type: string
+            required:
+            - namespaces
+            type: object
+          status:
+            description: EdgeClusterStatus defines the observed state of EdgeCluster
+            properties:
+              authenticationToken:
+                description: The authentication token of the EdgeCluster. This token
+                  is cannot be used in its raw form, as it doesn't include the signature
+                  or certificate authority hash.
+                type: string
+              connectionStatus:
+                description: An EdgeCluster can be either connected or disconnected.
+                type: string
+            required:
+            - authenticationToken
+            - connectionStatus
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

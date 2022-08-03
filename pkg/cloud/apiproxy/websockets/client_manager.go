@@ -1,7 +1,6 @@
-package clients
+package websockets
 
 import (
-	"context"
 	"fmt"
 	"log"
 
@@ -15,12 +14,11 @@ import (
 
 type ClientManager struct {
 	auth       *authentication.Authenticator
-	ctx        *context.Context
 	edgeClient *clientset.Clientset
 	clients    map[string]*Client
 }
 
-func New() *ClientManager {
+func NewManager() *ClientManager {
 	config, err := rest.InClusterConfig()
 
 	if err != nil {

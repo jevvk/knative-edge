@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
-	"edge.knative.dev/pkg/cloud/apiproxy/clients"
+	ws "edge.knative.dev/pkg/cloud/apiproxy/websockets"
 )
 
 // EdgeClusterReconciler reconciles a EdgeCluster object
@@ -34,7 +34,7 @@ type EdgeClusterReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 
-	clientManager *clients.ClientManager
+	clientManager *ws.ClientManager
 }
 
 //+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete
@@ -74,9 +74,8 @@ func (r *EdgeClusterReconciler) Stop() {
 	}
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *EdgeClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.clientManager = clients.New()
+func (r *EdgeClusterReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
+	r.clientManager = clientManager
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cloudv1.EdgeCluster{}).

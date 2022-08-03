@@ -34,12 +34,10 @@ spec:
         # seccompProfile:
         #   type: RuntimeDefault
       containers:
-      - command:
-        - /manager
+      - name: manager
         args:
         - --leader-elect
-        image: controller:latest
-        name: manager
+        image: controller
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

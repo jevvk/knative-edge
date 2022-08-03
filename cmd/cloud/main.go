@@ -32,6 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
+	"edge.knative.dev/pkg/cloud/apiproxy"
+	"edge.knative.dev/pkg/cloud/apiproxy/authentication"
+	ws "edge.knative.dev/pkg/cloud/apiproxy/websockets"
 	"edge.knative.dev/pkg/cloud/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -52,16 +55,29 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var websocketAddr string
+	var initialize bool
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&websocketAddr, "websocket-bind-address", ":8082", "The address the websocket server binds to.")
+	flag.BoolVar(&initialize, "init", false, "Initialize mandatory components.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+
 	opts := zap.Options{
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	ctx := ctrl.SetupSignalHandler()
+
+	if initialize {
+		authentication.Initialize(ctx, authentication.SecretName)
+		os.Exit(0)
+	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -90,6 +106,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	clientManager := ws.NewManager()
+	websocketServer := apiproxy.New(ctx, websocketAddr, clientManager)
+
 	reconciler := &controllers.EdgeClusterReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -97,7 +116,7 @@ func main() {
 
 	defer reconciler.Stop()
 
-	if err = reconciler.SetupWithManager(mgr); err != nil {
+	if err = reconciler.Setup(mgr, clientManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "EdgeCluster")
 		os.Exit(1)
 	}
@@ -112,8 +131,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	setupLog.Info("starting websocket server")
+	go websocketServer.ListenAndServe()
+
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

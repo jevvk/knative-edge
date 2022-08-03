@@ -59,6 +59,10 @@ spec:
                 type: string
               connectionStatus:
                 description: An EdgeCluster can be either connected or disconnected.
+                enum:
+                - Allow
+                - Forbid
+                - Replace
                 type: string
             required:
             - authenticationToken

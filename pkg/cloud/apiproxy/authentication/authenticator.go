@@ -45,7 +45,25 @@ func Initialize(ctx context.Context, secretName string) {
 
 	secret, err := secrets.Get(ctx, secretName, metaV1.GetOptions{})
 
-	if apierrs.IsNotFound(err) {
+	skipGeneration := false
+	resetSecret := false
+
+	if err == nil {
+		privSecret, privExists := secret.Data[PrivateKeyFile]
+		caSecret, caExists := secret.Data[CertificateAuthorityFile]
+
+		if !privExists || !caExists {
+			resetSecret = true
+		} else if len(privSecret) == 0 || len(caSecret) == 0 {
+			resetSecret = true
+		} else {
+			skipGeneration = true
+		}
+	} else if !apierrs.IsNotFound(err) {
+		panic(fmt.Errorf("couldn't retrieve private key: %s", err))
+	}
+
+	if !skipGeneration {
 		log.Printf("Couldn't find secrets/%s in namespaces/%s. A new private key and certificate will be generated.", secretName, Namespace)
 
 		privateKey, err := GenerateKey()
@@ -72,15 +90,17 @@ func Initialize(ctx context.Context, secretName string) {
 		secret.Data[PrivateKeyFile] = []byte(*privateKeyPem)
 		secret.Data[CertificateAuthorityFile] = []byte(*caPem)
 
-		_, err = secrets.Create(ctx, secret, metaV1.CreateOptions{})
+		if resetSecret {
+			_, err = secrets.Update(ctx, secret, metaV1.UpdateOptions{})
+		} else {
+			_, err = secrets.Create(ctx, secret, metaV1.CreateOptions{})
+		}
 
 		if err != nil {
 			panic(fmt.Errorf("couldn't update secret: %s", err))
 		}
 
 		log.Printf("New secret created.")
-	} else if err != nil {
-		panic(fmt.Errorf("couldn't retrieve private key: %s", err))
 	} else {
 		log.Printf("Already found secrets/%s in namespaces/%s.", secretName, Namespace)
 	}
@@ -158,7 +178,7 @@ func (auth *Authenticator) CreateToken() (*string, error) {
 	builder.WriteString(auth.caSignature)
 
 	signedToken := builder.String()
-	auth.store.StoreToken(token)
+	// auth.store.StoreToken(token)
 
 	return &signedToken, nil
 }

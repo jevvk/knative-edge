@@ -33,9 +33,11 @@ const (
 type EdgeClusterSpec struct {
 	// The zone of the EdgeCluster
 	// +optional
+	// +kubebuilder:printcolumn
 	Zone *string `json:"zone"`
 	// The region where the EdgeCluster is located.
 	// +optional
+	// +kubebuilder:printcolumn
 	Region *string `json:"region"`
 	// The list of namespaces which are replicated to the EdgeCluster.
 	Namespaces []string `json:"namespaces"`
@@ -44,6 +46,7 @@ type EdgeClusterSpec struct {
 // EdgeClusterStatus defines the observed state of EdgeCluster
 type EdgeClusterStatus struct {
 	// An EdgeCluster can be either connected or disconnected.
+	// +kubebuilder:printcolumn
 	ConnectionStatus ConnectionStatus `json:"connectionStatus"`
 	// The authentication token of the EdgeCluster. This token is cannot be used in its raw form, as it doesn't include the signature or certificate authority hash.
 	AuthenticationToken string `json:"authenticationToken"`

@@ -38,7 +38,7 @@ import (
 )
 
 // EdgeClusterReconciler reconciles a EdgeCluster object
-type ServicesReconciler struct {
+type KservicesReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -47,7 +47,7 @@ type ServicesReconciler struct {
 }
 
 //+kubebuilder:rbac:groups=knative.dev,resources=kservices,verbs=get,list,watch
-func (r *ServicesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *KservicesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	var kservice servingv1.Service
@@ -68,7 +68,7 @@ func (r *ServicesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, err
 }
 
-func (r *ServicesReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
+func (r *KservicesReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
 	r.clientManager = clientManager
 
 	return ctrl.NewControllerManagedBy(mgr).

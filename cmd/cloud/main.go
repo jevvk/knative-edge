@@ -24,12 +24,16 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
 	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
 	"edge.knative.dev/pkg/cloud/apiproxy"
@@ -47,6 +51,8 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	utilruntime.Must(corev1.AddToScheme(scheme))
+	utilruntime.Must(servingv1.AddToScheme(scheme))
 	utilruntime.Must(cloudv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -109,16 +115,52 @@ func main() {
 	clientManager := ws.NewManager()
 	websocketServer := apiproxy.New(ctx, websocketAddr, clientManager)
 
-	reconciler := &controllers.EdgeClusterReconciler{
+	edgeClustersReconciler := &controllers.EdgeClusterReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("edgeclusters-controller"),
 	}
 
-	defer reconciler.CleanUp()
+	defer edgeClustersReconciler.CleanUp()
 
-	if err = reconciler.Setup(ctx, mgr, clientManager); err != nil {
+	if err = edgeClustersReconciler.Setup(mgr, clientManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "EdgeCluster")
+		os.Exit(1)
+	}
+	//+kubebuilder:scaffold:builder
+
+	secretsReconciler := &controllers.SecretsReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("secrets-controller"),
+	}
+
+	if err = secretsReconciler.Setup(mgr, clientManager); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Secret")
+		os.Exit(1)
+	}
+	//+kubebuilder:scaffold:builder
+
+	configMapsReconciler := &controllers.ConfigMapsReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("configmaps-controller"),
+	}
+
+	if err = configMapsReconciler.Setup(mgr, clientManager); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Secret")
+		os.Exit(1)
+	}
+	//+kubebuilder:scaffold:builder
+
+	kservicesReconciler := &controllers.KservicesReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("kservices-controller"),
+	}
+
+	if err = kservicesReconciler.Setup(mgr, clientManager); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Secret")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

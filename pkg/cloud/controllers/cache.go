@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	corev1 "k8s.io/api/core/v1"
@@ -11,18 +11,18 @@ import (
 var ScopedCache = cache.BuilderWithOptions(cache.Options{
 	SelectorsByObject: cache.SelectorsByObject{
 		&corev1.Secret{}: cache.ObjectSelector{
-			Field: fields.SelectorFromSet(map[string]string{
-				".metadata.labels.['edge\\.knative\\.dev/synchronize']": "true",
+			Label: labels.SelectorFromSet(map[string]string{
+				"edge.knative.dev/synchronize": "true",
 			}),
 		},
 		&corev1.ConfigMap{}: cache.ObjectSelector{
-			Field: fields.SelectorFromSet(map[string]string{
-				".metadata.labels.['edge\\.knative\\.dev/synchronize']": "true",
+			Label: labels.SelectorFromSet(map[string]string{
+				"edge.knative.dev/synchronize": "true",
 			}),
 		},
 		&servingv1.Service{}: cache.ObjectSelector{
-			Field: fields.SelectorFromSet(map[string]string{
-				".metadata.labels.['edge\\.knative\\.dev/synchronize']": "true",
+			Label: labels.SelectorFromSet(map[string]string{
+				"edge.knative.dev/synchronize": "true",
 			}),
 		},
 	},

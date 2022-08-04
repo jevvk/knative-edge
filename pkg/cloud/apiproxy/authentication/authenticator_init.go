@@ -11,6 +11,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+//+kubebuilder:rbac:groups="",resources=secrets,namespace=knative-edge-system,verbs=get;create;update;delete
+
 func Initialize(ctx context.Context, secretName string) {
 	config, err := rest.InClusterConfig()
 

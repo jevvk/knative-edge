@@ -36,6 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source" // Required for Watching
 )
 
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+
 // EdgeClusterReconciler reconciles a EdgeCluster object
 type SecretsReconciler struct {
 	client.Client
@@ -45,8 +47,6 @@ type SecretsReconciler struct {
 	clientManager *ws.ClientManager
 }
 
-//+kubebuilder:rbac:groups=,resources=secrets,namespace=knative-edge-system,verbs=get,create,update,delete
-//+kubebuilder:rbac:groups=,resources=secrets,verbs=get,list,watch
 func (r *SecretsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 

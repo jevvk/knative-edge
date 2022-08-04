@@ -36,6 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source" // Required for Watching
 )
 
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+
 // EdgeClusterReconciler reconciles a EdgeCluster object
 type ConfigMapsReconciler struct {
 	client.Client
@@ -45,7 +47,6 @@ type ConfigMapsReconciler struct {
 	clientManager *ws.ClientManager
 }
 
-//+kubebuilder:rbac:groups=,resources=configmaps,verbs=get,list,watch
 func (r *ConfigMapsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 

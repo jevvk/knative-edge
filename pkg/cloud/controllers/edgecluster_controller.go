@@ -30,6 +30,10 @@ import (
 	ws "edge.knative.dev/pkg/cloud/apiproxy/websockets"
 )
 
+//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/finalizers,verbs=update
+
 // EdgeClusterReconciler reconciles a EdgeCluster object
 type EdgeClusterReconciler struct {
 	client.Client
@@ -39,10 +43,6 @@ type EdgeClusterReconciler struct {
 	clientManager *ws.ClientManager
 }
 
-//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/finalizers,verbs=update
-//+kubebuilder:rbac:groups=,resources=secrets,namespace=knative-edge-system,verbs=get,create,update,delete
 func (r *EdgeClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := klog.FromContext(ctx)
 

@@ -37,6 +37,8 @@ import (
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
+//+kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch
+
 // EdgeClusterReconciler reconciles a EdgeCluster object
 type KservicesReconciler struct {
 	client.Client
@@ -46,7 +48,6 @@ type KservicesReconciler struct {
 	clientManager *ws.ClientManager
 }
 
-//+kubebuilder:rbac:groups=knative.dev,resources=kservices,verbs=get,list,watch
 func (r *KservicesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 

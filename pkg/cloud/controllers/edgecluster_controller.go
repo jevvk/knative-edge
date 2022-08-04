@@ -24,7 +24,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	klog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
 	ws "edge.knative.dev/pkg/cloud/apiproxy/websockets"
@@ -36,8 +36,6 @@ type EdgeClusterReconciler struct {
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 
-	ctx context.Context
-
 	clientManager *ws.ClientManager
 }
 
@@ -46,7 +44,7 @@ type EdgeClusterReconciler struct {
 //+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/finalizers,verbs=update
 //+kubebuilder:rbac:groups=,resources=secrets,namespace=knative-edge-system,verbs=get,create,update,delete
 func (r *EdgeClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	log := klog.FromContext(ctx)
 
 	var cluster cloudv1.EdgeCluster
 
@@ -79,8 +77,7 @@ func (r *EdgeClusterReconciler) CleanUp() {
 	}
 }
 
-func (r *EdgeClusterReconciler) Setup(ctx context.Context, mgr ctrl.Manager, clientManager *ws.ClientManager) error {
-	r.ctx = ctx
+func (r *EdgeClusterReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
 	r.clientManager = clientManager
 
 	return ctrl.NewControllerManagedBy(mgr).

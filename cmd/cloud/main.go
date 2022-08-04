@@ -110,13 +110,14 @@ func main() {
 	websocketServer := apiproxy.New(ctx, websocketAddr, clientManager)
 
 	reconciler := &controllers.EdgeClusterReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("edgeclusters-controller"),
 	}
 
-	defer reconciler.Stop()
+	defer reconciler.CleanUp()
 
-	if err = reconciler.Setup(mgr, clientManager); err != nil {
+	if err = reconciler.Setup(ctx, mgr, clientManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "EdgeCluster")
 		os.Exit(1)
 	}

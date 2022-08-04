@@ -21,6 +21,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -32,7 +33,10 @@ import (
 // EdgeClusterReconciler reconciles a EdgeCluster object
 type EdgeClusterReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
+
+	ctx context.Context
 
 	clientManager *ws.ClientManager
 }
@@ -40,6 +44,7 @@ type EdgeClusterReconciler struct {
 //+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=,resources=secrets,namespace=knative-edge-system,verbs=get,create,update,delete
 func (r *EdgeClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
@@ -68,13 +73,14 @@ func (r *EdgeClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-func (r *EdgeClusterReconciler) Stop() {
+func (r *EdgeClusterReconciler) CleanUp() {
 	if r.clientManager != nil {
 		r.clientManager.Stop()
 	}
 }
 
-func (r *EdgeClusterReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
+func (r *EdgeClusterReconciler) Setup(ctx context.Context, mgr ctrl.Manager, clientManager *ws.ClientManager) error {
+	r.ctx = ctx
 	r.clientManager = clientManager
 
 	return ctrl.NewControllerManagedBy(mgr).

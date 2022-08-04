@@ -23,3 +23,7 @@ testbin/*
 *.swp
 *.swo
 *~
+
+# vscode settings
+.vscode/
+!.vscode/settings.json

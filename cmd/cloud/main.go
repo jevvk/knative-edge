@@ -106,6 +106,7 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		LeaderElectionReleaseOnCancel: true,
+		NewCache:                      controllers.ScopedCache,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

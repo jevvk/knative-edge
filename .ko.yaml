@@ -1,0 +1,7 @@
+builds:
+- id: cloud
+  dir: .
+  main: ./cmd/cloud
+  ldflags:
+  - -s
+  - -w

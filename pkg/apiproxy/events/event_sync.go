@@ -54,7 +54,7 @@ func (SyncEvent) NewFromEvent(e *Event) (*SyncEvent, error) {
 	}
 
 	var resources map[string]resourceSync
-	err := Decode(e.Encoding, e.Data, &resources)
+	err := Decode(e.Encoding, []byte(e.Data), &resources)
 
 	if err != nil {
 		return nil, err

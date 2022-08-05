@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
   creationTimestamp: null
-  name: edgeclusters.cloud.edge.knative.dev
+  name: edgeclusters.edge.knative.dev
 spec:
-  group: cloud.edge.knative.dev
+  group: edge.knative.dev
   names:
     kind: EdgeCluster
     listKind: EdgeClusterList

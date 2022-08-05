@@ -38,11 +38,19 @@ spec:
               data:
                 description: The definition of the remote resource
                 type: string
+              resource.apiVersion:
+                description: The apiVersion of the remote resource
+                type: string
+              resource.kind:
+                description: The kind of the remote resource
+                type: string
               resource.remote.version:
                 description: The resourceVersion of the remote resource
                 type: string
             required:
             - data
+            - resource.apiVersion
+            - resource.kind
             - resource.remote.version
             type: object
           status:

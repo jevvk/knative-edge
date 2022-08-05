@@ -22,6 +22,13 @@ import (
 
 // EdgeResourceSpec defines the desired state of EdgeResource
 type EdgeResourceSpec struct {
+	// The apiVersion of the remote resource
+	// +kubebuilder:printcolumn
+	ApiVersion string `json:"resource.apiVersion"`
+	// The kind of the remote resource
+	// +kubebuilder:printcolumn
+	Kind string `json:"resource.kind"`
+
 	// The resourceVersion of the remote resource
 	// +kubebuilder:printcolumn
 	RemoteResourceVersion string `json:"resource.remote.version"`

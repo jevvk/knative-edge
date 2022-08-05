@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package cloud
 
 import (
 	"context"
@@ -26,8 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	klog "sigs.k8s.io/controller-runtime/pkg/log"
 
+	ws "edge.knative.dev/pkg/apiproxy/websockets"
 	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
-	ws "edge.knative.dev/pkg/cloud/apiproxy/websockets"
 )
 
 //+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete

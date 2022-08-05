@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"edge.knative.dev/pkg/cloud/apiproxy/authentication"
-	"edge.knative.dev/pkg/cloud/apiproxy/websockets"
+	"edge.knative.dev/pkg/apiproxy/authentication"
+	"edge.knative.dev/pkg/apiproxy/websockets"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"sigs.k8s.io/controller-runtime/pkg/log"

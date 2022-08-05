@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package cloud
 
 import (
 	"context"
@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	ws "edge.knative.dev/pkg/cloud/apiproxy/websockets"
+	ws "edge.knative.dev/pkg/apiproxy/websockets"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"   // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/handler"   // Required for Watching
@@ -36,10 +36,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source" // Required for Watching
 )
 
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 // EdgeClusterReconciler reconciles a EdgeCluster object
-type ConfigMapsReconciler struct {
+type SecretsReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -47,34 +47,34 @@ type ConfigMapsReconciler struct {
 	clientManager *ws.ClientManager
 }
 
-func (r *ConfigMapsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SecretsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	var secret corev1.ConfigMap
+	var secret corev1.Secret
 
 	if err := r.Get(ctx, req.NamespacedName, &secret); err != nil {
-		log.Error(err, "unable to fetch secret", "controller", "ConfigMaps")
+		log.Error(err, "unable to fetch secret", "controller", "Secrets")
 
 		if errors.IsNotFound(err) {
-			r.clientManager.DeleteConfigMap(req.NamespacedName.String())
+			r.clientManager.DeleteSecret(req.NamespacedName.String())
 			return ctrl.Result{}, nil
 		}
 
 		return ctrl.Result{}, err
 	}
 
-	err := r.clientManager.UpdateConfigMap(&secret)
+	err := r.clientManager.UpdateSecret(&secret)
 
 	return ctrl.Result{}, err
 }
 
-func (r *ConfigMapsReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
+func (r *SecretsReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
 	r.clientManager = clientManager
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.ConfigMap{}).
+		For(&corev1.Secret{}).
 		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
+			&source.Kind{Type: &corev1.Secret{}},
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).

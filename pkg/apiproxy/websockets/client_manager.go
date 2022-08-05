@@ -3,7 +3,7 @@ package websockets
 import (
 	"fmt"
 
-	"edge.knative.dev/pkg/cloud/apiproxy/authentication"
+	"edge.knative.dev/pkg/apiproxy/authentication"
 	"github.com/gorilla/websocket"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/rest"

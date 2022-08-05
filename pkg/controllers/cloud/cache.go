@@ -1,4 +1,4 @@
-package controllers
+package cloud
 
 import (
 	"k8s.io/apimachinery/pkg/labels"

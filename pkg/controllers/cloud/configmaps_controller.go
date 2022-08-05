@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package cloud
 
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -26,21 +27,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	ws "edge.knative.dev/pkg/cloud/apiproxy/websockets"
+	ws "edge.knative.dev/pkg/apiproxy/websockets"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"   // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/handler"   // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/predicate" // Required for Watching
 
 	"sigs.k8s.io/controller-runtime/pkg/source" // Required for Watching
-
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-//+kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 
 // EdgeClusterReconciler reconciles a EdgeCluster object
-type KservicesReconciler struct {
+type ConfigMapsReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -48,34 +47,34 @@ type KservicesReconciler struct {
 	clientManager *ws.ClientManager
 }
 
-func (r *KservicesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ConfigMapsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	var kservice servingv1.Service
+	var secret corev1.ConfigMap
 
-	if err := r.Get(ctx, req.NamespacedName, &kservice); err != nil {
-		log.Error(err, "unable to fetch service", "controller", "Services")
+	if err := r.Get(ctx, req.NamespacedName, &secret); err != nil {
+		log.Error(err, "unable to fetch secret", "controller", "ConfigMaps")
 
 		if errors.IsNotFound(err) {
-			r.clientManager.DeleteKService(req.NamespacedName.String())
+			r.clientManager.DeleteConfigMap(req.NamespacedName.String())
 			return ctrl.Result{}, nil
 		}
 
 		return ctrl.Result{}, err
 	}
 
-	err := r.clientManager.UpdateKService(&kservice)
+	err := r.clientManager.UpdateConfigMap(&secret)
 
 	return ctrl.Result{}, err
 }
 
-func (r *KservicesReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
+func (r *ConfigMapsReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
 	r.clientManager = clientManager
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&servingv1.Service{}).
+		For(&corev1.ConfigMap{}).
 		Watches(
-			&source.Kind{Type: &servingv1.Service{}},
+			&source.Kind{Type: &corev1.ConfigMap{}},
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).

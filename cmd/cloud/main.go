@@ -35,11 +35,11 @@ import (
 
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
+	"edge.knative.dev/pkg/apiproxy"
+	"edge.knative.dev/pkg/apiproxy/authentication"
+	ws "edge.knative.dev/pkg/apiproxy/websockets"
 	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
-	"edge.knative.dev/pkg/cloud/apiproxy"
-	"edge.knative.dev/pkg/cloud/apiproxy/authentication"
-	ws "edge.knative.dev/pkg/cloud/apiproxy/websockets"
-	"edge.knative.dev/pkg/cloud/controllers"
+	controllers "edge.knative.dev/pkg/controllers/cloud"
 	//+kubebuilder:scaffold:imports
 )
 

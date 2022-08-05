@@ -24,14 +24,14 @@ import (
 type EdgeResourceSpec struct {
 	// The apiVersion of the remote resource
 	// +kubebuilder:printcolumn
-	ApiVersion string `json:"resource.apiVersion"`
+	ApiVersion string `json:"apiVersion"`
 	// The kind of the remote resource
 	// +kubebuilder:printcolumn
-	Kind string `json:"resource.kind"`
-
+	Kind string `json:"kind"`
 	// The resourceVersion of the remote resource
 	// +kubebuilder:printcolumn
-	RemoteResourceVersion string `json:"resource.remote.version"`
+	RemoteVersion string `json:"remoteVersion"`
+
 	// The definition of the remote resource
 	Data string `json:"data"`
 }

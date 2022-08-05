@@ -35,23 +35,23 @@ spec:
           spec:
             description: EdgeResourceSpec defines the desired state of EdgeResource
             properties:
+              apiVersion:
+                description: The apiVersion of the remote resource
+                type: string
               data:
                 description: The definition of the remote resource
                 type: string
-              resource.apiVersion:
-                description: The apiVersion of the remote resource
-                type: string
-              resource.kind:
+              kind:
                 description: The kind of the remote resource
                 type: string
-              resource.remote.version:
+              remoteVersion:
                 description: The resourceVersion of the remote resource
                 type: string
             required:
+            - apiVersion
             - data
-            - resource.apiVersion
-            - resource.kind
-            - resource.remote.version
+            - kind
+            - remoteVersion
             type: object
           status:
             description: EdgeResourceStatus defines the observed state of EdgeResource

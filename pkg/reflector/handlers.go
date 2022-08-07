@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	edgeevent "edge.knative.dev/pkg/apiproxy/event"
+	edgeevent "edge.jevv.dev/pkg/apiproxy/event"
 )
 
 func (r *Reflector) handleEdgeEvent(ctx context.Context, eventWrapper *edgeevent.Event) {

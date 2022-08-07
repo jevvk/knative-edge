@@ -35,11 +35,11 @@ import (
 
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
-	"edge.knative.dev/pkg/apiproxy"
-	"edge.knative.dev/pkg/apiproxy/authentication"
-	ws "edge.knative.dev/pkg/apiproxy/websockets"
-	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
-	controllers "edge.knative.dev/pkg/controllers/cloud"
+	"edge.jevv.dev/pkg/apiproxy"
+	"edge.jevv.dev/pkg/apiproxy/authentication"
+	ws "edge.jevv.dev/pkg/apiproxy/websockets"
+	cloudv1 "edge.jevv.dev/pkg/apis/cloud/v1"
+	controllers "edge.jevv.dev/pkg/controllers/cloud"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -93,7 +93,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "ad6e1dd9.edge.knative.dev",
+		LeaderElectionID:       "ad6e1dd9.edge.jevv.dev",
 
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the

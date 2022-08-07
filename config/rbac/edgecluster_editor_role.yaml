@@ -5,7 +5,7 @@ metadata:
   name: edgecluster-editor-role
 rules:
 - apiGroups:
-  - edge.knative.dev
+  - edge.jevv.dev
   resources:
   - edgeclusters
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - edge.knative.dev
+  - edge.jevv.dev
   resources:
   - edgeclusters/status
   verbs:

@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
   creationTimestamp: null
-  name: edgenamespaces.internal.edge.knative.dev
+  name: edgenamespaces.internal.edge.jevv.dev
 spec:
-  group: internal.edge.knative.dev
+  group: internal.edge.jevv.dev
   names:
     kind: EdgeNamespace
     listKind: EdgeNamespaceList

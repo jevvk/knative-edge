@@ -24,9 +24,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	ws "edge.knative.dev/pkg/apiproxy/websockets"
+	ws "edge.jevv.dev/pkg/apiproxy/websockets"
 
-	edgev1 "edge.knative.dev/pkg/apis/edge/v1"
+	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 

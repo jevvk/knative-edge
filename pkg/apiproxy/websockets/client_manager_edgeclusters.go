@@ -3,7 +3,7 @@ package websockets
 import (
 	"log"
 
-	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
+	cloudv1 "edge.jevv.dev/pkg/apis/cloud/v1"
 )
 
 func (cm *ClientManager) AddCluster(cluster *cloudv1.EdgeCluster) *cloudv1.EdgeCluster {

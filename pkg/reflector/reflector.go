@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
-	ws "edge.knative.dev/pkg/reflector/websockets"
+	ws "edge.jevv.dev/pkg/reflector/websockets"
 )
 
 type Reflector struct {

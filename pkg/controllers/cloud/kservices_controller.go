@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	ws "edge.knative.dev/pkg/apiproxy/websockets"
+	ws "edge.jevv.dev/pkg/apiproxy/websockets"
 
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )

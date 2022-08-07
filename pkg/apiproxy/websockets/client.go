@@ -3,7 +3,7 @@ package websockets
 import (
 	"github.com/gorilla/websocket"
 
-	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
+	cloudv1 "edge.jevv.dev/pkg/apis/cloud/v1"
 )
 
 type Client struct {

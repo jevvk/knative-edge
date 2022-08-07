@@ -16,4 +16,4 @@ resources:
 - ../manager
 images:
 - name: controller
-  newName: ko://edge.knative.dev/cmd/cloud
+  newName: ko://edge.jevv.dev/cmd/cloud

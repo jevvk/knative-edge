@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"edge.knative.dev/pkg/apiproxy/event"
-	edgev1 "edge.knative.dev/pkg/apis/edge/v1"
+	"edge.jevv.dev/pkg/apiproxy/event"
+	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
 )
 
 func (r *Reflector) sync(ctx context.Context) error {

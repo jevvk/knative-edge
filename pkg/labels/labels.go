@@ -1,7 +1,7 @@
 package labels
 
 const (
-	ManagedLabel               = "edge.knative.dev/managed"
-	SyncronizeLabel            = "edge.knative.dev/synchronized"
-	RemoteResourceVersionLabel = "edge.knative.dev/remoteResourceVersion"
+	ManagedLabel               = "edge.jevv.dev/managed"
+	SyncronizeLabel            = "edge.jevv.dev/synchronized"
+	RemoteResourceVersionLabel = "edge.jevv.dev/remoteResourceVersion"
 )

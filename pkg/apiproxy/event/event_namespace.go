@@ -1,7 +1,7 @@
 package event
 
 import (
-	edgev1 "edge.knative.dev/pkg/apis/edge/v1"
+	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
 )
 
 type NamespaceEvent struct {

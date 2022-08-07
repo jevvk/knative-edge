@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-PKG ?= edge.knative.dev/cmd/cloud
+PKG ?= edge.jevv.dev/cmd/cloud
 IMG ?= ko://${PKG}
 REPO ?= kind.local
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.

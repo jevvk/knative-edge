@@ -1,4 +1,4 @@
-module edge.knative.dev
+module edge.jevv.dev
 
 go 1.19
 

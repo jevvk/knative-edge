@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
   creationTimestamp: null
-  name: edgeresources.internal.edge.knative.dev
+  name: edgeresources.internal.edge.jevv.dev
 spec:
-  group: internal.edge.knative.dev
+  group: internal.edge.jevv.dev
   names:
     kind: EdgeResource
     listKind: EdgeResourceList
@@ -48,6 +48,9 @@ spec:
               kind:
                 description: The kind of the remote resource.
                 type: string
+              name:
+                description: The name of the remote resource
+                type: string
               remoteResourceVersion:
                 description: The resourceVersion of the remote resource.
                 type: string
@@ -56,6 +59,7 @@ spec:
             - data
             - dataChecksum
             - kind
+            - name
             - remoteResourceVersion
             type: object
           status:

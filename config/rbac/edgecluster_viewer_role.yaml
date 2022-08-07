@@ -5,7 +5,7 @@ metadata:
   name: edgecluster-viewer-role
 rules:
 - apiGroups:
-  - edge.knative.dev
+  - edge.jevv.dev
   resources:
   - edgeclusters
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - edge.knative.dev
+  - edge.jevv.dev
   resources:
   - edgeclusters/status
   verbs:

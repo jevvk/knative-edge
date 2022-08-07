@@ -1,4 +1,4 @@
-apiVersion: cloud.edge.knative.dev/v1
+apiVersion: cloud.edge.jevv.dev/v1
 kind: EdgeCluster
 metadata:
   name: edgecluster-sample

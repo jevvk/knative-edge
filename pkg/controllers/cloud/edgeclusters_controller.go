@@ -26,13 +26,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	klog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	ws "edge.knative.dev/pkg/apiproxy/websockets"
-	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
+	ws "edge.jevv.dev/pkg/apiproxy/websockets"
+	cloudv1 "edge.jevv.dev/pkg/apis/cloud/v1"
 )
 
-//+kubebuilder:rbac:groups=edge.knative.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=edge.knative.dev,resources=edgeclusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=edge.knative.dev,resources=edgeclusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=edge.jevv.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=edge.jevv.dev,resources=edgeclusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=edge.jevv.dev,resources=edgeclusters/finalizers,verbs=update
 
 // EdgeClusterReconciler reconciles a EdgeCluster object
 type EdgeClusterReconciler struct {

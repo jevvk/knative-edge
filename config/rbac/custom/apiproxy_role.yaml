@@ -6,7 +6,7 @@ metadata:
 aggregationRule:
   clusterRoleSelectors:
   - matchLabels:
-      edge.knative.dev/synchronize: true
+      edge.jevv.dev/synchronize: true
 rules:
 - apiGroups:
   - ""

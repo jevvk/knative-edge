@@ -1,7 +1,7 @@
 package authentication
 
 const (
-	ApiProxyServiceName      = "apiproxy-service"
+	ApiProxyServiceName      = "refractor-service"
 	HTTPPort                 = 8080
 	AuthHeader               = "X-K-EDGE-Authorization"
 	Namespace                = "knative-edge-system"

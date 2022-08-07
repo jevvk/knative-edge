@@ -12,9 +12,9 @@ import (
 	"github.com/gorilla/websocket"
 	klog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	cloudauthentication "edge.jevv.dev/pkg/apiproxy/authentication"
-	edgeevent "edge.jevv.dev/pkg/apiproxy/event"
 	"edge.jevv.dev/pkg/reflector/authentication"
+	cloudauthentication "edge.jevv.dev/pkg/refractor/authentication"
+	edgeevent "edge.jevv.dev/pkg/refractor/event"
 )
 
 var log = klog.Log.WithName("reflector").WithName("websockets")

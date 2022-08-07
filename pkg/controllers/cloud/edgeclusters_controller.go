@@ -26,8 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	klog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	ws "edge.jevv.dev/pkg/apiproxy/websockets"
 	cloudv1 "edge.jevv.dev/pkg/apis/cloud/v1"
+	ws "edge.jevv.dev/pkg/refractor/websockets"
 )
 
 //+kubebuilder:rbac:groups=edge.jevv.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete

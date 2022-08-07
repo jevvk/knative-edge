@@ -81,6 +81,10 @@ func New(certificate []byte, key []byte) (*Authenticator, error) {
 	return &authorizer, nil
 }
 
+func (auth *Authenticator) GenerateToken() string {
+	return randstr.Hex(32)
+}
+
 func (auth *Authenticator) CreateToken() (*string, error) {
 	token := randstr.Hex(32)
 	signature, err := SignToken(token, auth.key)

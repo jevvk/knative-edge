@@ -35,11 +35,11 @@ import (
 
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
-	"edge.jevv.dev/pkg/apiproxy"
-	"edge.jevv.dev/pkg/apiproxy/authentication"
-	ws "edge.jevv.dev/pkg/apiproxy/websockets"
 	cloudv1 "edge.jevv.dev/pkg/apis/cloud/v1"
 	controllers "edge.jevv.dev/pkg/controllers/cloud"
+	"edge.jevv.dev/pkg/refractor"
+	"edge.jevv.dev/pkg/refractor/authentication"
+	ws "edge.jevv.dev/pkg/refractor/websockets"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -114,7 +114,7 @@ func main() {
 	}
 
 	clientManager := ws.NewManager()
-	websocketServer := apiproxy.New(ctx, websocketAddr, clientManager)
+	websocketServer := refractor.New(ctx, websocketAddr, clientManager)
 
 	edgeClustersReconciler := &controllers.EdgeClusterReconciler{
 		Client:   mgr.GetClient(),

@@ -3,7 +3,7 @@ package websockets
 import (
 	"fmt"
 
-	"edge.jevv.dev/pkg/apiproxy/authentication"
+	"edge.jevv.dev/pkg/refractor/authentication"
 	"github.com/gorilla/websocket"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/rest"

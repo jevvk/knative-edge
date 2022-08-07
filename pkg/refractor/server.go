@@ -1,12 +1,12 @@
-package apiproxy
+package refractor
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 
-	"edge.jevv.dev/pkg/apiproxy/authentication"
-	"edge.jevv.dev/pkg/apiproxy/websockets"
+	"edge.jevv.dev/pkg/refractor/authentication"
+	"edge.jevv.dev/pkg/refractor/websockets"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -14,7 +14,7 @@ import (
 
 func New(ctx context.Context, addr string, clientManager *websockets.ClientManager) *http.Server {
 	authenticator, err := authentication.NewFromLocalFiles()
-	log := log.FromContext(ctx).WithName("apiproxy")
+	log := log.FromContext(ctx).WithName("refractor")
 
 	if err != nil {
 		panic(fmt.Errorf("could not create authenticator: %s", err))

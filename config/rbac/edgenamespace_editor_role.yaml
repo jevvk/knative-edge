@@ -1,13 +1,13 @@
-# permissions for end users to edit edgeclusters.
+# permissions for end users to edit edgenamespaces.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: edgecluster-editor-role
+  name: edgenamespace-editor-role
 rules:
 - apiGroups:
-  - edge.knative.dev
+  - internal.knative.dev
   resources:
-  - edgeclusters
+  - edgenamespaces
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - edge.knative.dev
+  - internal.knative.dev
   resources:
-  - edgeclusters/status
+  - edgenamespaces/status
   verbs:
   - get

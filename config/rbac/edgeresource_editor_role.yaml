@@ -1,13 +1,13 @@
-# permissions for end users to edit edgeclusters.
+# permissions for end users to edit edgeresources.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: edgecluster-editor-role
+  name: edgeresource-editor-role
 rules:
 - apiGroups:
-  - edge.knative.dev
+  - internal.knative.dev
   resources:
-  - edgeclusters
+  - edgeresources
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - edge.knative.dev
+  - internal.knative.dev
   resources:
-  - edgeclusters/status
+  - edgeresources/status
   verbs:
   - get

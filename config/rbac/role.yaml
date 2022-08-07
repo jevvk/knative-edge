@@ -22,7 +22,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - cloud.edge.knative.dev
+  - edge.knative.dev
   resources:
   - edgeclusters
   verbs:
@@ -34,13 +34,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - cloud.edge.knative.dev
+  - edge.knative.dev
   resources:
   - edgeclusters/finalizers
   verbs:
   - update
 - apiGroups:
-  - cloud.edge.knative.dev
+  - edge.knative.dev
   resources:
   - edgeclusters/status
   verbs:

@@ -1,0 +1,34 @@
+# permissions for end users to edit edgeresources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: apiproxy-role
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      edge.knative.dev/synchronize: true
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - "serving.knative.dev"
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch

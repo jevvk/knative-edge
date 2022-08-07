@@ -1,20 +1,20 @@
-# permissions for end users to view edgeclusters.
+# permissions for end users to view edgenamespaces.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: edgecluster-viewer-role
+  name: edgenamespace-viewer-role
 rules:
 - apiGroups:
-  - edge.knative.dev
+  - internal.knative.dev
   resources:
-  - edgeclusters
+  - edgenamespaces
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - edge.knative.dev
+  - internal.knative.dev
   resources:
-  - edgeclusters/status
+  - edgenamespaces/status
   verbs:
   - get

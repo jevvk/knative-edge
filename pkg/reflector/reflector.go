@@ -25,7 +25,10 @@ type Reflector struct {
 	inject.Client
 	inject.Stoppable
 
-	SyncPeriod time.Duration
+	SyncPeriod            time.Duration
+	TimeBetweenSyncEvents time.Duration
+	TimeBetweenReconnects time.Duration
+
 	edgeClient *ws.EdgeClient
 
 	client client.Client
@@ -56,8 +59,13 @@ func (r *Reflector) loop(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	const firstSleep = 5 * time.Second
+	sleepTime := firstSleep
+
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(sleepTime)
+		sleepTime = r.TimeBetweenReconnects
+
 		if cfg, ok := <-r.reload; ok {
 			r.cfg = *cfg
 		}
@@ -71,14 +79,24 @@ func (r *Reflector) loop(ctx context.Context) {
 			r.edgeClient.AddEventHandler(r.handleEdgeEvent)
 
 			go func() {
-				r.err <- r.edgeClient.Start(ctx)
+				err := r.edgeClient.Start(ctx)
+
+				if err != nil {
+					r.err <- err
+				} else {
+					r.reload <- nil
+				}
 			}()
 		}
 
 		select {
 		case cfg := <-r.reload:
+			if cfg != nil {
+				r.cfg = *cfg
+				sleepTime = 0
+			}
+
 			r.edgeClient.Stop()
-			r.cfg = *cfg
 		case <-ctx.Done():
 			return
 		}

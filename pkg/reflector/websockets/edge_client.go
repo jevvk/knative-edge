@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -58,9 +59,17 @@ func New(ctx context.Context, url string, token string) (*EdgeClient, error) {
 
 	return &EdgeClient{
 		conn:     conn,
-		handlers: make([]handlerfn, 1),
+		handlers: make([]handlerfn, 0),
 		stop:     make(chan error),
 	}, nil
+}
+
+func (ec *EdgeClient) SendEvent(ctx context.Context, event *edgeevent.Event) error {
+	if ec.conn == nil {
+		return errors.New("no websocket connection found")
+	}
+
+	return ec.conn.WriteJSON(event)
 }
 
 func (ec *EdgeClient) AddEventHandler(handler handlerfn) {
@@ -68,6 +77,33 @@ func (ec *EdgeClient) AddEventHandler(handler handlerfn) {
 }
 
 func (ec *EdgeClient) Start(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+
+	go func() {
+		for {
+			var event edgeevent.Event
+			err := ec.conn.ReadJSON(&event)
+
+			if err != nil {
+				if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, &websocket.CloseError{}) {
+					log.Error(err, "Edge client closed unexpectedly.")
+
+					cancel()
+					break
+				} else if neterr, ok := err.(interface{ Temporary() bool }); ok && neterr.Temporary() {
+					continue
+				} else {
+					log.Error(err, "Edge client received an unknown error.")
+					cancel()
+					break
+				}
+			}
+
+			for _, handler := range ec.handlers {
+				handler(ctx, &event)
+			}
+		}
+	}()
 
 	<-ctx.Done()
 	return nil

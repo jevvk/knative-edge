@@ -25,7 +25,7 @@ func (r *Reflector) sync(ctx context.Context) error {
 		var resourceList edgev1.EdgeResourceList
 
 		if err := r.client.List(ctx, &resourceList); err != nil {
-			return fmt.Errorf("couldn't list edge resoures: %s", err)
+			return fmt.Errorf("couldn't list edge resources: %s", err)
 		}
 
 		syncEvent := event.NewSyncEvent(namespace.Name)
@@ -35,7 +35,15 @@ func (r *Reflector) sync(ctx context.Context) error {
 			syncEvent.AddResource(&resource)
 		}
 
-		// TODO: push sync event
+		ev, err := event.WrapSyncEvent(syncEvent)
+
+		if err == nil {
+			r.edgeClient.SendEvent(ctx, ev)
+		} else {
+			log.Error(err, "Couldn't send sync event.")
+		}
+
+		time.Sleep(r.TimeBetweenSyncEvents)
 	}
 
 	return nil

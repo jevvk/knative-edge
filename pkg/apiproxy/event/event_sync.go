@@ -58,6 +58,10 @@ func UnwrapSyncEvent(e *Event) (*SyncEvent, error) {
 	}, nil
 }
 
+func WrapSyncEvent(e *SyncEvent) (*Event, error) {
+	return WrapEvent(SyncEventType, e)
+}
+
 type resourceSync struct {
 	Name                  string
 	ApiVersion            string

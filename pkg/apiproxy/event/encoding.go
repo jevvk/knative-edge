@@ -1,24 +1,25 @@
-package events
+package event
 
 import (
 	"bytes"
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 )
 
-type EncodingType string
-
-const (
-	JsonEncoding         EncodingType = "json"
-	CompressedEncodingV1 EncodingType = "compressedv1"
-	DefaultEncoding      EncodingType = JsonEncoding
-)
-
 func Encode(encoding EncodingType, obj any) ([]byte, error) {
-	if encoding == CompressedEncodingV1 {
+	if obj == nil {
+		return nil, errors.New("object cannot be null")
+	}
+
+	switch encoding {
+	case JsonEncoding:
+		return json.Marshal(obj)
+
+	case CompressedEncodingV1:
 		jBuf, err := json.Marshal(obj)
 
 		if err != nil {
@@ -35,15 +36,17 @@ func Encode(encoding EncodingType, obj any) ([]byte, error) {
 		w.Close()
 
 		return buf.Bytes(), nil
-	} else if encoding == JsonEncoding {
-		return json.Marshal(obj)
-	} else {
-		return nil, fmt.Errorf("unknown encoding type %s", encoding)
 	}
+
+	return nil, fmt.Errorf("unknown encoding type %s", encoding)
 }
 
 func Decode(encoding EncodingType, data []byte, obj any) error {
-	if encoding == CompressedEncodingV1 {
+	switch encoding {
+	case JsonEncoding:
+		return json.Unmarshal(data, obj)
+
+	case CompressedEncodingV1:
 		r, err := zlib.NewReader(bytes.NewReader(data))
 
 		if err != nil {
@@ -68,9 +71,7 @@ func Decode(encoding EncodingType, data []byte, obj any) error {
 		}
 
 		return json.Unmarshal(jBuf, obj)
-	} else if encoding == JsonEncoding {
-		return json.Unmarshal(data, obj)
-	} else {
-		return fmt.Errorf("unknown encoding type %s", encoding)
 	}
+
+	return fmt.Errorf("unknown encoding type %s", encoding)
 }

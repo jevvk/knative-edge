@@ -19,6 +19,7 @@ func NewHandler(h WebsocketHandler) *handler {
 	return &handler{next: h}
 }
 
+// TODO: check per-message compression
 var upgrader = websocket.Upgrader{}
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

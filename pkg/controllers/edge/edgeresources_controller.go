@@ -14,26 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cloud
+package edge
 
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	ws "edge.knative.dev/pkg/apiproxy/websockets"
+
+	edgev1 "edge.knative.dev/pkg/apis/edge/v1"
 )
 
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+//+kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch
 
 // EdgeClusterReconciler reconciles a EdgeCluster object
-type ConfigMapsReconciler struct {
+type EdgeResourcesReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -41,31 +40,22 @@ type ConfigMapsReconciler struct {
 	clientManager *ws.ClientManager
 }
 
-func (r *ConfigMapsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+func (r *EdgeResourcesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	// log := log.FromContext(ctx)
 
-	var secret corev1.ConfigMap
+	var resource edgev1.EdgeResource
 
-	if err := r.Get(ctx, req.NamespacedName, &secret); err != nil {
-		log.Error(err, "unable to fetch secret", "controller", "ConfigMaps")
-
-		if errors.IsNotFound(err) {
-			r.clientManager.DeleteConfigMap(req.NamespacedName.String())
-			return ctrl.Result{}, nil
-		}
-
-		return ctrl.Result{}, err
+	if err := r.Get(ctx, req.NamespacedName, &resource); err != nil {
+		// TODO
 	}
 
-	err := r.clientManager.UpdateConfigMap(&secret)
-
-	return ctrl.Result{}, err
+	return ctrl.Result{}, nil
 }
 
-func (r *ConfigMapsReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
+func (r *EdgeResourcesReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientManager) error {
 	r.clientManager = clientManager
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.ConfigMap{}).
+		For(&edgev1.EdgeResource{}).
 		Complete(r)
 }

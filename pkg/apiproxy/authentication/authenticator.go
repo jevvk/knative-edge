@@ -91,6 +91,7 @@ func (auth *Authenticator) CreateToken() (*string, error) {
 
 	builder := strings.Builder{}
 
+	builder.WriteString("v1/")
 	builder.WriteString(token)
 	builder.WriteString(":")
 	builder.WriteString(*signature)
@@ -114,10 +115,24 @@ func (auth *Authenticator) Authorize(token string) error {
 		return errors.New("empty token provided")
 	}
 
-	parts := strings.Split(token, ":")
+	parts := strings.SplitAfterN(token, "/", 2)
+
+	if len(parts) != 2 {
+		return errors.New("invalid token format: cannot retrieve version")
+	}
+
+	var version string
+
+	unpack(parts, &version, &token)
+
+	if version != "v1" {
+		return errors.New("invalid token format: invalid version")
+	}
+
+	parts = strings.SplitAfterN(token, ":", 3)
 
 	if len(parts) != 3 {
-		return errors.New("invalid token format")
+		return errors.New("invalid token format: unknown format for v1")
 	}
 
 	var rawToken, rawTokenSignature, caSignature string

@@ -28,12 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	ws "edge.knative.dev/pkg/apiproxy/websockets"
-
-	"sigs.k8s.io/controller-runtime/pkg/builder"   // Required for Watching
-	"sigs.k8s.io/controller-runtime/pkg/handler"   // Required for Watching
-	"sigs.k8s.io/controller-runtime/pkg/predicate" // Required for Watching
-
-	"sigs.k8s.io/controller-runtime/pkg/source" // Required for Watching
 )
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
@@ -73,10 +67,5 @@ func (r *SecretsReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientMana
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Secret{}).
-		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
-			&handler.EnqueueRequestForObject{},
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
-		).
 		Complete(r)
 }

@@ -30,9 +30,9 @@ import (
 	cloudv1 "edge.knative.dev/pkg/apis/cloud/v1"
 )
 
-//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloud.edge.knative.dev,resources=edgeclusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=edge.knative.dev,resources=edgeclusters,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=edge.knative.dev,resources=edgeclusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=edge.knative.dev,resources=edgeclusters/finalizers,verbs=update
 
 // EdgeClusterReconciler reconciles a EdgeCluster object
 type EdgeClusterReconciler struct {

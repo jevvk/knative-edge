@@ -36,25 +36,33 @@ spec:
             description: EdgeResourceSpec defines the desired state of EdgeResource
             properties:
               apiVersion:
-                description: The apiVersion of the remote resource
+                description: The apiVersion of the remote resource.
                 type: string
               data:
                 description: The definition of the remote resource
                 type: string
-              kind:
-                description: The kind of the remote resource
+              dataChecksum:
+                description: The signed checksum of the remote resource. It is used
+                  in order to validate that the data comes from the remote cluster.
                 type: string
-              remoteVersion:
-                description: The resourceVersion of the remote resource
+              kind:
+                description: The kind of the remote resource.
+                type: string
+              remoteResourceVersion:
+                description: The resourceVersion of the remote resource.
                 type: string
             required:
             - apiVersion
             - data
+            - dataChecksum
             - kind
-            - remoteVersion
+            - remoteResourceVersion
             type: object
           status:
             description: EdgeResourceStatus defines the observed state of EdgeResource
+            properties:
+              resourceVersion:
+                type: string
             type: object
         type: object
     served: true

@@ -28,12 +28,6 @@ import (
 
 	ws "edge.knative.dev/pkg/apiproxy/websockets"
 
-	"sigs.k8s.io/controller-runtime/pkg/builder"   // Required for Watching
-	"sigs.k8s.io/controller-runtime/pkg/handler"   // Required for Watching
-	"sigs.k8s.io/controller-runtime/pkg/predicate" // Required for Watching
-
-	"sigs.k8s.io/controller-runtime/pkg/source" // Required for Watching
-
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
@@ -74,10 +68,5 @@ func (r *KservicesReconciler) Setup(mgr ctrl.Manager, clientManager *ws.ClientMa
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&servingv1.Service{}).
-		Watches(
-			&source.Kind{Type: &servingv1.Service{}},
-			&handler.EnqueueRequestForObject{},
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
-		).
 		Complete(r)
 }

@@ -14,7 +14,7 @@ import (
 
 func New(ctx context.Context, addr string, clientManager *websockets.ClientManager) *http.Server {
 	authenticator, err := authentication.NewFromLocalFiles()
-	log := log.FromContext(ctx)
+	log := log.FromContext(ctx).WithName("apiproxy")
 
 	if err != nil {
 		panic(fmt.Errorf("could not create authenticator: %s", err))

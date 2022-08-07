@@ -22,22 +22,31 @@ import (
 
 // EdgeResourceSpec defines the desired state of EdgeResource
 type EdgeResourceSpec struct {
-	// The apiVersion of the remote resource
+	// The name of the remote resource
+	// +kubebuilder:printcolumn,name=resource
+	Name string `json:"name"`
+	// The apiVersion of the remote resource.
 	// +kubebuilder:printcolumn
 	ApiVersion string `json:"apiVersion"`
-	// The kind of the remote resource
+	// The kind of the remote resource.
 	// +kubebuilder:printcolumn
 	Kind string `json:"kind"`
-	// The resourceVersion of the remote resource
+	// The resourceVersion of the remote resource.
 	// +kubebuilder:printcolumn
-	RemoteVersion string `json:"remoteVersion"`
+	RemoteResourceVersion string `json:"remoteResourceVersion"`
 
+	// The signed checksum of the remote resource.
+	// It is used in order to validate that the data comes
+	// from the remote cluster.
+	DataChecksum string `json:"dataChecksum"`
 	// The definition of the remote resource
 	Data string `json:"data"`
 }
 
 // EdgeResourceStatus defines the observed state of EdgeResource
 type EdgeResourceStatus struct {
+	// +optional
+	ResourceVersion string `json:"resourceVersion"`
 }
 
 //+kubebuilder:object:root=true

@@ -3,6 +3,7 @@ package websockets
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -27,6 +28,10 @@ type EdgeClient struct {
 }
 
 func New(ctx context.Context, url string, token string) (*EdgeClient, error) {
+	if url == "" {
+		return nil, errors.New("empty websocket url provided")
+	}
+
 	authenticator, err := authentication.New(token)
 
 	if err != nil {

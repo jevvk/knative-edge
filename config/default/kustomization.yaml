@@ -12,8 +12,8 @@ kind: Kustomization
 resources:
 - ../crd
 - ../rbac
-- ../secrets
 - ../manager
+- ../secrets
 images:
 - name: controller
   newName: ko://edge.jevv.dev/cmd/cloud

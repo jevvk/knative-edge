@@ -25,8 +25,6 @@ import (
 	"edge.jevv.dev/pkg/controllers"
 )
 
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update
-
 type CoreV1Reconciler struct {
 	controllers.EdgeOuterReconciler
 

@@ -1,7 +1,6 @@
 domain: edge.jevv.dev
 layout:
 - go.kubebuilder.io/v3
-multigroup: true
 projectName: knative-edge
 repo: github.com/jevvk/knative-edge
 resources:
@@ -12,21 +11,5 @@ resources:
   group: edge
   kind: EdgeCluster
   path: edge.jevv.dev/pkg/apis/cloud/v1
-  version: v1
-- api:
-    crdVersion: v1
-  controller: true
-  domain: edge.jevv.dev
-  group: internal
-  kind: EdgeNamespace
-  path: edge.jevv.dev/pkg/apis/edge/v1
-  version: v1
-- api:
-    crdVersion: v1
-  controller: true
-  domain: edge.jevv.dev
-  group: internal
-  kind: EdgeResource
-  path: edge.jevv.dev/pkg/apis/edge/v1
   version: v1
 version: "3"

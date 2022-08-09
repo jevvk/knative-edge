@@ -1,7 +1,8 @@
 package labels
 
 const (
-	ManagedLabel               = "edge.jevv.dev/managed"
-	SyncronizeLabel            = "edge.jevv.dev/synchronized"
-	RemoteResourceVersionLabel = "edge.jevv.dev/remoteResourceVersion"
+	EnvironmentLabel = "edge.jevv.dev/environment"
+	ManagedLabel     = "edge.jevv.dev/managed"
+	ManagedByLabel   = "app.kubernetes.io/managed-by"
+	CreatedByLabel   = "app.kubernetes.io/created-by"
 )

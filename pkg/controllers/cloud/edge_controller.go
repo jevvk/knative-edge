@@ -1,4 +1,4 @@
-package edge
+package cloud
 
 import (
 	"context"
@@ -22,5 +22,6 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 
 func (r *EdgeReconciler) Setup(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).Complete(r)
+	return ctrl.NewControllerManagedBy(mgr).
+		Complete(r)
 }

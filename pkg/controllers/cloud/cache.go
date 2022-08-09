@@ -14,17 +14,17 @@ var ScopedCache = cache.BuilderWithOptions(cache.Options{
 	SelectorsByObject: cache.SelectorsByObject{
 		&corev1.Secret{}: cache.ObjectSelector{
 			Label: klabels.SelectorFromSet(map[string]string{
-				labels.SyncronizeLabel: "true",
+				labels.ManagedLabel: "true",
 			}),
 		},
 		&corev1.ConfigMap{}: cache.ObjectSelector{
 			Label: klabels.SelectorFromSet(map[string]string{
-				labels.SyncronizeLabel: "true",
+				labels.ManagedLabel: "true",
 			}),
 		},
 		&servingv1.Service{}: cache.ObjectSelector{
 			Label: klabels.SelectorFromSet(map[string]string{
-				labels.SyncronizeLabel: "true",
+				labels.ManagedLabel: "true",
 			}),
 		},
 	},

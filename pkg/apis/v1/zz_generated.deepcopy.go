@@ -97,8 +97,8 @@ func (in *EdgeClusterSpec) DeepCopyInto(out *EdgeClusterSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.Namespaces != nil {
-		in, out := &in.Namespaces, &out.Namespaces
+	if in.Environments != nil {
+		in, out := &in.Environments, &out.Environments
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

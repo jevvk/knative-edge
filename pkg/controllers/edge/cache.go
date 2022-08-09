@@ -1,31 +1,33 @@
 package edge
 
 import (
+	"fmt"
+	"strings"
+
 	klabels "k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-
-	corev1 "k8s.io/api/core/v1"
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
 	"edge.jevv.dev/pkg/labels"
 )
 
-var ScopedCache = cache.BuilderWithOptions(cache.Options{
-	SelectorsByObject: cache.SelectorsByObject{
-		&corev1.Secret{}: cache.ObjectSelector{
-			Label: klabels.SelectorFromSet(map[string]string{
-				labels.ManagedLabel: "true",
-			}),
+func EnvScopedCache(envs []string) cache.NewCacheFunc {
+	selector, err := klabels.Parse(fmt.Sprintf("%s in (%s)", labels.EnvironmentLabel, strings.Join(envs, ",")))
+
+	if err != nil {
+		panic(fmt.Errorf("couldn't create label selector: %w", err))
+	}
+
+	return cache.BuilderWithOptions(cache.Options{
+		DefaultSelector: cache.ObjectSelector{
+			Label: selector,
 		},
-		&corev1.ConfigMap{}: cache.ObjectSelector{
-			Label: klabels.SelectorFromSet(map[string]string{
-				labels.ManagedLabel: "true",
-			}),
-		},
-		&servingv1.Service{}: cache.ObjectSelector{
-			Label: klabels.SelectorFromSet(map[string]string{
-				labels.ManagedLabel: "true",
-			}),
-		},
+	})
+}
+
+var ManagedScopedCache = cache.BuilderWithOptions(cache.Options{
+	DefaultSelector: cache.ObjectSelector{
+		Label: klabels.SelectorFromSet(map[string]string{
+			labels.ManagedLabel: "true",
+		}),
 	},
 })

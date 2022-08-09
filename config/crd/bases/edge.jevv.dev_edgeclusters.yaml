@@ -15,7 +15,22 @@ spec:
     singular: edgecluster
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.zone
+      name: Zone
+      type: string
+    - jsonPath: .spec.region
+      name: Region
+      type: string
+    - jsonPath: .spec.environments
+      name: Environments
+      priority: 1
+      type: string
+    - jsonPath: .status.lastReportedAt
+      name: Last Reported
+      priority: 1
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: EdgeCluster is the Schema for the edgeclusters API
@@ -35,8 +50,9 @@ spec:
           spec:
             description: EdgeClusterSpec defines the desired state of EdgeCluster
             properties:
-              namespaces:
-                description: The list of namespaces which are replicated to the EdgeCluster.
+              environments:
+                description: The list of environments which are replicated to the
+                  EdgeCluster.
                 items:
                   type: string
                 type: array
@@ -44,29 +60,17 @@ spec:
                 description: The region where the EdgeCluster is located.
                 type: string
               zone:
-                description: The zone of the EdgeCluster
+                description: The zone of the EdgeCluster.
                 type: string
             required:
-            - namespaces
+            - environments
             type: object
           status:
             description: EdgeClusterStatus defines the observed state of EdgeCluster
             properties:
-              authenticationToken:
-                description: The authentication token of the EdgeCluster. This token
-                  is cannot be used in its raw form, as it doesn't include the signature
-                  or certificate authority hash.
+              lastReportedAt:
+                description: The time the EdgeCluster last reported.
                 type: string
-              connectionStatus:
-                description: An EdgeCluster can be either connected or disconnected.
-                enum:
-                - Allow
-                - Forbid
-                - Replace
-                type: string
-            required:
-            - authenticationToken
-            - connectionStatus
             type: object
         type: object
     served: true

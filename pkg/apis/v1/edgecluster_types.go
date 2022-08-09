@@ -17,13 +17,11 @@ limitations under the License.
 package v1
 
 import (
-	"time"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ConnectionStatus displays whether the EdgeCluster is connected or not.
-// +kubebuilder:validation:Enum=Allow;Forbid;Replace
+// +kubebuilder:validation:Enum=Disconnected;Connected
 type ConnectionStatus string
 
 const (
@@ -33,13 +31,11 @@ const (
 
 // EdgeClusterSpec defines the desired state of EdgeCluster
 type EdgeClusterSpec struct {
-	// The zone of the EdgeCluster
+	// The zone of the EdgeCluster.
 	// +optional
-	// +kubebuilder:printcolumn
 	Zone *string `json:"zone"`
 	// The region where the EdgeCluster is located.
 	// +optional
-	// +kubebuilder:printcolumn
 	Region *string `json:"region"`
 	// The list of environments which are replicated to the EdgeCluster.
 	Environments []string `json:"environments"`
@@ -47,13 +43,17 @@ type EdgeClusterSpec struct {
 
 // EdgeClusterStatus defines the observed state of EdgeCluster
 type EdgeClusterStatus struct {
-	// The time the edge cluster last reported
-	LastReportedAt time.Time `json:"lastReportedAt"`
+	// The time the EdgeCluster last reported.
+	LastReportedAt string `json:"lastReportedAt,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name=Zone,JSONPath=".spec.zone",type=string,priority=0
+// +kubebuilder:printcolumn:name=Region,JSONPath=".spec.region",type=string,priority=0
+// +kubebuilder:printcolumn:name=Environments,JSONPath=".spec.environments",type=string,priority=1
+// +kubebuilder:printcolumn:name="Last Reported",JSONPath=".status.lastReportedAt",type=string,priority=1
 
 // EdgeCluster is the Schema for the edgeclusters API
 type EdgeCluster struct {

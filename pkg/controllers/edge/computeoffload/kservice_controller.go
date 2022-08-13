@@ -59,6 +59,20 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
+	var revision *servingv1.Revision
+	revisionNamespacedName := getRevisionNamespacedName(request.NamespacedName)
+
+	// check if target revision exists, if it does, change the spec
+	// this is because we need to change the service if the service
+	// is changed in the remote
+	if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
 	var percent int64 = 0
 
 	service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
@@ -82,6 +96,11 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 
 func (r *KServiceReconciler) Setup(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		Watches(
+			&source.Kind{Type: &servingv1.Service{}},
+			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
+		).
 		Watches(
 			&source.Kind{Type: &servingv1.Revision{}},
 			&handler.EnqueueRequestForOwner{},

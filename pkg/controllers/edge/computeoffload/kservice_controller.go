@@ -68,7 +68,15 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		Tag:          tag,
 	})
 
-	return ctrl.Result{}, r.Patch(ctx, &service, patch)
+	if err := r.Patch(ctx, &service, patch); err != nil {
+		if apierrors.IsConflict(err) {
+			return ctrl.Result{Requeue: true}, nil
+		}
+
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *KServiceReconciler) Setup(mgr ctrl.Manager) error {

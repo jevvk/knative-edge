@@ -106,11 +106,27 @@ func (r *KRevisionReconciler) Reconcile(ctx context.Context, request ctrl.Reques
 	}
 
 	if shouldCreate {
-		return ctrl.Result{}, r.Create(ctx, &revision)
+		if err := r.Create(ctx, &revision); err != nil {
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
+
+			return ctrl.Result{}, err
+		}
 	} else if shouldUpdate {
-		return ctrl.Result{}, r.Update(ctx, &revision)
+		if err := r.Update(ctx, &revision); err != nil {
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
+
+			return ctrl.Result{}, err
+		}
 	} else if shouldDelete {
-		if err := r.Delete(ctx, &revision); err != nil && !apierrors.IsNotFound(err) {
+		if err := r.Delete(ctx, &revision); err != nil {
+			if apierrors.IsNotFound(err) {
+				return ctrl.Result{}, nil
+			}
+
 			return ctrl.Result{}, err
 		}
 	}

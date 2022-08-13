@@ -2,7 +2,6 @@ package edge
 
 import (
 	"context"
-	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"edge.jevv.dev/pkg/controllers"
-	"edge.jevv.dev/pkg/labels"
 )
 
 type refGenerator[T client.Object] func() (T, T)
@@ -58,7 +56,7 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		if apierrors.IsNotFound(err) {
 			shouldDelete = true
 		} else {
-			return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -66,7 +64,7 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		if apierrors.IsNotFound(err) {
 			shouldCreate = true
 		} else {
-			return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -80,9 +78,9 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			localKind.SetLabels(kindLabels)
 		}
 
-		kindLabels[labels.ManagedLabel] = "true"
-		kindLabels[labels.ManagedByLabel] = "knative-edge-controller"
-		kindLabels[labels.CreatedByLabel] = "knative-edge-controller"
+		kindLabels[controllers.ManagedLabel] = "true"
+		kindLabels[controllers.ManagedByLabel] = "knative-edge-controller"
+		kindLabels[controllers.CreatedByLabel] = "knative-edge-controller"
 	}
 
 	if shouldCreate {

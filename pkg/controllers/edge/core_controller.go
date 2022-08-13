@@ -17,10 +17,11 @@ limitations under the License.
 package edge
 
 import (
-	corev1 "k8s.io/api/core/v1"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"edge.jevv.dev/pkg/controllers"
 )
@@ -54,7 +55,12 @@ func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
 				*dst = corev1.Namespace{}
 			}
 
-			dst.Spec = src.Spec
+			dst.ObjectMeta = metav1.ObjectMeta{
+				Name:        src.ObjectMeta.Name,
+				Namespace:   src.ObjectMeta.Namespace,
+				Annotations: src.ObjectMeta.Annotations,
+				Labels:      src.ObjectMeta.Labels,
+			}
 
 			return nil
 		},
@@ -80,6 +86,13 @@ func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
 
 			if dst == nil {
 				*dst = corev1.ConfigMap{}
+			}
+
+			dst.ObjectMeta = metav1.ObjectMeta{
+				Name:        src.ObjectMeta.Name,
+				Namespace:   src.ObjectMeta.Namespace,
+				Annotations: src.ObjectMeta.Annotations,
+				Labels:      src.ObjectMeta.Labels,
 			}
 
 			dst.Data = src.Data
@@ -108,6 +121,13 @@ func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
 
 			if dst == nil {
 				*dst = corev1.Secret{}
+			}
+
+			dst.ObjectMeta = metav1.ObjectMeta{
+				Name:        src.ObjectMeta.Name,
+				Namespace:   src.ObjectMeta.Namespace,
+				Annotations: src.ObjectMeta.Annotations,
+				Labels:      src.ObjectMeta.Labels,
 			}
 
 			dst.Data = src.Data

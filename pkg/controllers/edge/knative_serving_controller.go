@@ -20,6 +20,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
 	"edge.jevv.dev/pkg/controllers"
@@ -60,7 +61,14 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 				*dst = servingv1.Service{}
 			}
 
-			dst.Spec = src.Spec
+			dst.ObjectMeta = metav1.ObjectMeta{
+				Name:        src.ObjectMeta.Name,
+				Namespace:   src.ObjectMeta.Namespace,
+				Annotations: src.ObjectMeta.Annotations,
+				Labels:      src.ObjectMeta.Labels,
+			}
+
+			src.Spec.DeepCopyInto(&dst.Spec)
 
 			return nil
 		},

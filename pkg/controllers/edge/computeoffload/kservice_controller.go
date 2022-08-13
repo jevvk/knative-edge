@@ -85,7 +85,11 @@ func (r *KServiceReconciler) Setup(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: &servingv1.Revision{}},
 			&handler.EnqueueRequestForOwner{},
-			builder.WithPredicates(predicate.NewPredicateFuncs(isComputeOffloading)),
+			builder.WithPredicates(
+				predicate.And(
+					predicate.GenerationChangedPredicate{},
+					predicate.NewPredicateFuncs(isComputeOffloading)),
+			),
 		).
 		Complete(r)
 }

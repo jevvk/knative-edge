@@ -87,11 +87,14 @@ func (r *KRevisionReconciler) Reconcile(ctx context.Context, request ctrl.Reques
 				Name:            revisionNamespacedName.Name,
 				Namespace:       revisionNamespacedName.Namespace,
 				OwnerReferences: []metav1.OwnerReference{*kmeta.NewControllerRef(&service)},
-				Annotations: map[string]string{
+				Labels: map[string]string{
 					controllers.ManagedLabel:   "true",
 					controllers.EdgeLocalLabel: "true",
 					controllers.CreatedByLabel: "knative-edge-computeoffload-controller",
 					controllers.ManagedByLabel: "knative-edge-computeoffload-controller",
+				},
+				Annotations: map[string]string{
+					controllers.KnativeNoGCAnnotation: "true",
 				},
 			},
 			// TODO: create remote proxy

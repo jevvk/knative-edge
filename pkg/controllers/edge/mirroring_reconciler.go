@@ -122,6 +122,12 @@ func (r *mirroringReconciler[T]) Setup(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: kind1},
 			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(
+				predicate.And(
+					predicate.GenerationChangedPredicate{},
+					controllers.NotChangedByEdgeControllers{},
+				),
+			),
 		).
 		// remote watch
 		Watches(

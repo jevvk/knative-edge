@@ -60,7 +60,6 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 	}
 
 	var percent int64 = 0
-	patch := client.MergeFrom(service.DeepCopy())
 
 	service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
 		RevisionName: getRevisionNamespacedName(request.NamespacedName).Name,
@@ -68,7 +67,9 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		Tag:          tag,
 	})
 
-	if err := r.Patch(ctx, &service, patch); err != nil {
+	controllers.UpdateLastGenerationAnnotation(&service, &service)
+
+	if err := r.Update(ctx, &service); err != nil {
 		if apierrors.IsConflict(err) {
 			return ctrl.Result{Requeue: true}, nil
 		}

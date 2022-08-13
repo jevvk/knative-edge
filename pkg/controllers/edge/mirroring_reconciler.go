@@ -8,10 +8,12 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"edge.jevv.dev/pkg/controllers"
@@ -79,17 +81,37 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		}
 
 		kindLabels[controllers.ManagedLabel] = "true"
-		kindLabels[controllers.ManagedByLabel] = "knative-edge-controller"
+		kindLabels[controllers.ManagedByLabel] = "knative-edge"
 		kindLabels[controllers.CreatedByLabel] = "knative-edge-controller"
 	}
 
 	if shouldCreate {
-		return ctrl.Result{}, r.Create(ctx, localKind)
+		if err := r.Create(ctx, localKind); err != nil {
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
+
+			return ctrl.Result{}, err
+		}
 	} else if shouldDelete {
-		return ctrl.Result{}, r.Delete(ctx, localKind)
+		if err := r.Delete(ctx, localKind); err != nil {
+			if apierrors.IsNotFound(err) {
+				return ctrl.Result{}, nil
+			}
+
+			return ctrl.Result{}, err
+		}
 	} else {
-		return ctrl.Result{}, r.Update(ctx, localKind)
+		if err := r.Update(ctx, localKind); err != nil {
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
+
+			return ctrl.Result{}, err
+		}
 	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *mirroringReconciler[T]) Setup(mgr ctrl.Manager) error {

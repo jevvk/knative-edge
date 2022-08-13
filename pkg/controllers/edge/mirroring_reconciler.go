@@ -133,6 +133,7 @@ func (r *mirroringReconciler[T]) Setup(mgr ctrl.Manager) error {
 		Watches(
 			source.NewKindWithCache(kind2, r.RemoteCluster.GetCache()),
 			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
 		).
 		Complete(r)
 }

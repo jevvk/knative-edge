@@ -101,6 +101,8 @@ func (r *KRevisionReconciler) Reconcile(ctx context.Context, request ctrl.Reques
 	} else if shouldUpdate {
 		newRevision := r.buildRevision(revisionNamespacedName, &service)
 
+		controllers.UpdateLastGenerationAnnotation(revision, newRevision)
+
 		if err := r.Update(ctx, newRevision); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil
@@ -147,6 +149,10 @@ func (r *KRevisionReconciler) buildRevision(namespacedName types.NamespacedName,
 
 func (r *KRevisionReconciler) Setup(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&servingv1.Service{}).
+		Watches(
+			&source.Kind{Type: &servingv1.Service{}},
+			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
+		).
 		Complete(r)
 }

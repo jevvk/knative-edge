@@ -1,6 +1,7 @@
 package computeoffload
 
 import (
+	"fmt"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -9,8 +10,8 @@ import (
 )
 
 const (
-	suffix = "-edge-compute-offload"
-	tag    = "edge-compute-offload"
+	nameSuffix = "-edge-compute-offload"
+	tagPreffix = "edge-compute-offload-"
 )
 
 func isComputeOffloading(object client.Object) bool {
@@ -18,12 +19,12 @@ func isComputeOffloading(object client.Object) bool {
 		return false
 	}
 
-	return strings.HasSuffix(object.GetName(), suffix)
+	return strings.HasSuffix(object.GetName(), nameSuffix)
 }
 
 func getRevisionNamespacedName(namespacedName types.NamespacedName) types.NamespacedName {
 	return types.NamespacedName{
-		Name:      namespacedName.Name + suffix,
+		Name:      namespacedName.Name + nameSuffix,
 		Namespace: namespacedName.Namespace,
 	}
 }
@@ -34,10 +35,28 @@ func getComputeOffloadTrafficTarget(service *servingv1.Service) *servingv1.Traff
 	}
 
 	for _, target := range service.Spec.Traffic {
-		if target.Tag == tag {
+		if strings.HasPrefix(target.Tag, tagPreffix) {
 			return &target
 		}
 	}
 
 	return nil
+}
+
+func getTargetRevisionGeneration(target *servingv1.TrafficTarget) string {
+	if target == nil {
+		return ""
+	}
+
+	return strings.TrimPrefix(target.Tag, tagPreffix)
+}
+
+func getTargetTag(revision *servingv1.Revision) string {
+	generation := -1
+
+	if revision != nil {
+		generation = int(revision.GetGeneration())
+	}
+
+	return fmt.Sprintf("%s%d", tagPreffix, generation)
 }

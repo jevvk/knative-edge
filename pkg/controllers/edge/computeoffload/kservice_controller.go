@@ -2,6 +2,8 @@ package computeoffload
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
@@ -81,36 +83,51 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	// if the target already exists, then exit early
+	// if the target already exists, check if we need to change the tag
 	if target := getComputeOffloadTrafficTarget(&service); target != nil {
-		return ctrl.Result{}, nil
-	}
+		if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
+			// something is not right, target exists, but revision doesn't
+			// requeue after some time
+			if apierrors.IsNotFound(err) {
+				return ctrl.Result{RequeueAfter: time.Second}, nil
+			}
 
-	// check if target revision exists, if it does, change the spec
-	// this is because we need to change the service if the service
-	// is changed in the remote
-	if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
-		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
+		// early exit if generation is the same
+		if fmt.Sprint(revision.GetGeneration()) == getTargetRevisionGeneration(target) {
+			return ctrl.Result{}, nil
+		}
+
+		// finally, update the tag
+		target.Tag = getTargetTag(revision)
+	} else {
+		// if target revision exists, change the spec
+		// this is because we need to change the service if the service
+		// is changed in the remote
+		if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
+			if apierrors.IsNotFound(err) {
+				return ctrl.Result{}, nil
+			}
+
 			return ctrl.Result{}, err
 		}
 
-		return ctrl.Result{}, nil
+		// we know the revision exists but the revision isn't set in the service,
+		// so we add it as a traffic target
+
+		var percent int64 = 0
+
+		service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
+			RevisionName: getRevisionNamespacedName(request.NamespacedName).Name,
+			Percent:      &percent,
+			Tag:          tagPreffix,
+		})
 	}
 
-	// we know the revision exists but the revision isn't set in the service,
-	// so we add it as a traffic target
-
-	var percent int64 = 0
-
-	service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
-		RevisionName: getRevisionNamespacedName(request.NamespacedName).Name,
-		Percent:      &percent,
-		Tag:          tag,
-	})
-
-	controllers.UpdateLastGenerationAnnotation(&service, &service)
-
 	// finally, update the service
+	controllers.UpdateLastGenerationAnnotation(&service, &service)
 
 	if err := r.Update(ctx, &service); err != nil {
 		if apierrors.IsConflict(err) {

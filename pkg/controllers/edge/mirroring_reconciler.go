@@ -2,6 +2,7 @@ package edge
 
 import (
 	"context"
+	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,6 +53,7 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	localKind, remoteKind := r.RefGenerator()
 
 	shouldCreate := false
+	shouldUpdate := false
 	shouldDelete := false
 
 	if err := r.RemoteCluster.GetClient().Get(ctx, req.NamespacedName, remoteKind); err != nil {
@@ -70,19 +72,31 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
-	r.RefMerger(remoteKind, localKind)
-
 	if !shouldDelete {
+		r.RefMerger(remoteKind, localKind)
+
 		kindLabels := localKind.GetLabels()
+		kindAnnotations := localKind.GetAnnotations()
 
 		if kindLabels == nil {
 			kindLabels = make(map[string]string)
 			localKind.SetLabels(kindLabels)
 		}
 
-		kindLabels[controllers.ManagedLabel] = "true"
-		kindLabels[controllers.ManagedByLabel] = "knative-edge"
-		kindLabels[controllers.CreatedByLabel] = "knative-edge-controller"
+		if kindAnnotations == nil {
+			kindAnnotations = make(map[string]string)
+			localKind.SetAnnotations(kindAnnotations)
+		}
+
+		remoteGeneration := fmt.Sprintf("%d", remoteKind.GetGeneration())
+		lastRemoteGeneration := kindAnnotations[controllers.LastRemoteGenerationAnnotation]
+
+		if lastRemoteGeneration != remoteGeneration {
+			shouldUpdate = lastRemoteGeneration != ""
+
+			controllers.UpdateLabels(localKind)
+			kindAnnotations[controllers.LastRemoteGenerationAnnotation] = remoteGeneration
+		}
 	}
 
 	if shouldCreate {
@@ -101,7 +115,7 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 
 			return ctrl.Result{}, err
 		}
-	} else {
+	} else if shouldUpdate {
 		if err := r.Update(ctx, localKind); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil

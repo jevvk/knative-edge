@@ -14,7 +14,7 @@ func UpdateLastGenerationAnnotation(src, dst client.Object) {
 		dst.SetAnnotations(annotations)
 	}
 
-	annotations[LastGenerationAnnotation] = fmt.Sprintf("%d", src.GetGeneration())
+	annotations[LastGenerationAnnotation] = fmt.Sprint(src.GetGeneration())
 }
 
 func UpdateLabels(object client.Object) {

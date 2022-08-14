@@ -21,7 +21,7 @@ func (NotChangedByEdgeControllers) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
-	oldGeneration := fmt.Sprintf("%d", e.ObjectOld.GetGeneration())
+	oldGeneration := fmt.Sprint(e.ObjectOld.GetGeneration())
 	newGeneration := e.ObjectNew.GetAnnotations()[LastGenerationAnnotation]
 
 	return oldGeneration != newGeneration

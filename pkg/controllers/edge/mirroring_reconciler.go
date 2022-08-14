@@ -88,7 +88,7 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			localKind.SetAnnotations(kindAnnotations)
 		}
 
-		remoteGeneration := fmt.Sprintf("%d", remoteKind.GetGeneration())
+		remoteGeneration := fmt.Sprint(remoteKind.GetGeneration())
 		lastRemoteGeneration := kindAnnotations[controllers.LastRemoteGenerationAnnotation]
 
 		if lastRemoteGeneration != remoteGeneration {

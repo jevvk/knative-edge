@@ -83,8 +83,9 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	// if the target already exists, check if we need to change the tag
 	if target := getComputeOffloadTrafficTarget(&service); target != nil {
+		// if the target already exists, check if we need to change the tag
+
 		if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
 			// something is not right, target exists, but revision doesn't
 			// requeue after some time
@@ -106,6 +107,7 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		// if target revision exists, change the spec
 		// this is because we need to change the service if the service
 		// is changed in the remote
+
 		if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
 			if apierrors.IsNotFound(err) {
 				return ctrl.Result{}, nil

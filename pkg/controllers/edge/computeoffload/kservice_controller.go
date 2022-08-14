@@ -83,7 +83,7 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	if target := getComputeOffloadTrafficTarget(&service); target != nil {
+	if target := getComputeOffloadTarget(&service); target != nil {
 		// if the target already exists, check if we need to change the tag
 
 		if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
@@ -97,12 +97,12 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		}
 
 		// early exit if generation is the same
-		if fmt.Sprint(revision.GetGeneration()) == getTargetRevisionGeneration(target) {
+		if fmt.Sprint(revision.GetGeneration()) == getRevisionGenerationFromTarget(target) {
 			return ctrl.Result{}, nil
 		}
 
 		// finally, update the tag
-		target.Tag = getTargetTag(revision)
+		target.Tag = getTargetTagFromRevision(revision)
 	} else {
 		// if target revision exists, change the spec
 		// this is because we need to change the service if the service
@@ -155,7 +155,7 @@ func (r *KServiceReconciler) Setup(mgr ctrl.Manager) error {
 			builder.WithPredicates(
 				predicate.And(
 					predicate.GenerationChangedPredicate{},
-					predicate.NewPredicateFuncs(isComputeOffloading)),
+					predicate.NewPredicateFuncs(isComputeOffloadRevision)),
 			),
 		).
 		Complete(r)

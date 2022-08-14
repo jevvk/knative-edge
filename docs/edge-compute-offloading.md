@@ -17,7 +17,7 @@ a system which automatically offloads workloads from the Edge to the Cloud.
 
 ## Proposal
 
-:
+The proposal is made up of two main parts:
 
 1. setting up and managing the cloud-hosted service reverse proxy
 2. controlling the revision traffic percentage dynamically 

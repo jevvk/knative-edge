@@ -17,6 +17,8 @@ limitations under the License.
 package edge
 
 import (
+	"strings"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
@@ -69,6 +71,23 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 			}
 
 			src.Spec.DeepCopyInto(&dst.Spec)
+
+			annotations := dst.GetAnnotations()
+
+			if annotations == nil {
+				annotations = make(map[string]string)
+				dst.SetAnnotations(annotations)
+			}
+
+			if src.Status.URL != nil {
+				url := src.Status.URL.String()
+
+				if !strings.HasSuffix(url, "/") {
+					url += "/"
+				}
+
+				annotations[controllers.RemoteUrlAnnotation] = url
+			}
 
 			return nil
 		},

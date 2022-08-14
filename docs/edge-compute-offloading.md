@@ -11,7 +11,7 @@ a system which automatically offloads workloads from the Edge to the Cloud.
 * Automatically offload computational workload from the Edge to the Cloud.
 * Provide a flexible way to replace edge offload functionality with different scalers.
 
-# Non-Goals
+## Non-Goals
 
 * Don't interfere with the [gradual rollout](https://knative.dev/docs/serving/rolling-out-latest-revision/) feature in Knative serving.
 
@@ -123,6 +123,67 @@ spec:
 
 
 ### Dynamic offloading
+
+In order to dynamically route the traffic towards the Cloud, a separate controller
+will watch all the reverse proxy revisions and keep a list of each of their
+services.
+
+Periodically, the controller will scrape the metrics of each of the service in order
+to judge the compute workload on the Edge. When the controller notices that the Edge
+cannot support the workload, it will start routing more traffic towards the reverse
+proxy revision.
+
+Let's say we start with the following service:
+
+```yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: example-service
+  namespace: default
+  ...
+spec:
+  ...
+  traffic:
+    - latestRevision: true
+      percent: 100
+    - name: example-service-edge-compute-offload
+      tag: edge-compute-offload-1
+      percent: 0
+```
+
+The controller will increase the percentage of `example-service-edge-compute-offload`
+until the metrics stabilize under the upper threshold. After the metrics stabilize, the
+service might look like this:
+
+```yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: example-service
+  namespace: default
+  ...
+spec:
+  ...
+  traffic:
+    - latestRevision: true
+      percent: 20
+    - name: example-service-edge-compute-offload
+      tag: edge-compute-offload-1
+      percent: 80
+```
+
+After a cooldown period, the controller will gradually decrease the traffic percentage
+to the reverse proxy. This is done until the metrics are stabilizing around the
+lower threshold.
+
+#### Scraped metrics
+
+The following metrics are scraped by the controller:
+
+1. TODO
+
+#### Decision algorithm
 
 TODO
 

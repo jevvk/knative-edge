@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,12 +42,13 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.Header().Add("Content-Type", "text/plain")
-		http.Error(w, "bad gateway: couldn't proxy to remote", http.StatusBadGateway)
 
-		return
-	}
-
-	if err := res.Write(w); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			http.Error(w, "bad gateway: couldn't proxy to remote", http.StatusBadGateway)
+		} else {
+			http.Error(w, "gateway timeout", http.StatusGatewayTimeout)
+		}
+	} else if err := res.Write(w); err != nil {
 		fmt.Printf("[%s %s] Error: couldn't write response for: %s", r.Method, r.URL.Path, err)
 	}
 }

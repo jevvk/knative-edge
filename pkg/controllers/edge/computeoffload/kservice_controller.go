@@ -124,7 +124,7 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
 			RevisionName: getRevisionNamespacedName(request.NamespacedName).Name,
 			Percent:      &percent,
-			Tag:          tagPreffix,
+			Tag:          getTargetTagFromRevision(revision),
 		})
 	}
 

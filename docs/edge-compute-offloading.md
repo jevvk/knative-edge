@@ -62,7 +62,9 @@ metadata:
   namespace: default
   generation: 1
   annotations:
-    serving.knative.dev/no-gc: true # done for the revision
+    # TODO: check if this is necessary
+    # this is added so the revision is not removed by the garbage collector
+    serving.knative.dev/no-gc: true
   ownerReferences: 
     # TODO: check if setting the service as the owner is ok
     #       knative-serving uses the configuration (which is managed by the service)

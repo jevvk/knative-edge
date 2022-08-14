@@ -14,7 +14,7 @@ const (
 	tagPreffix = "edge-compute-offload-"
 )
 
-func isComputeOffloading(object client.Object) bool {
+func isComputeOffloadRevision(object client.Object) bool {
 	if object == nil {
 		return false
 	}
@@ -29,7 +29,7 @@ func getRevisionNamespacedName(namespacedName types.NamespacedName) types.Namesp
 	}
 }
 
-func getComputeOffloadTrafficTarget(service *servingv1.Service) *servingv1.TrafficTarget {
+func getComputeOffloadTarget(service *servingv1.Service) *servingv1.TrafficTarget {
 	if service == nil {
 		return nil
 	}
@@ -43,7 +43,7 @@ func getComputeOffloadTrafficTarget(service *servingv1.Service) *servingv1.Traff
 	return nil
 }
 
-func getTargetRevisionGeneration(target *servingv1.TrafficTarget) string {
+func getRevisionGenerationFromTarget(target *servingv1.TrafficTarget) string {
 	if target == nil {
 		return ""
 	}
@@ -51,7 +51,7 @@ func getTargetRevisionGeneration(target *servingv1.TrafficTarget) string {
 	return strings.TrimPrefix(target.Tag, tagPreffix)
 }
 
-func getTargetTag(revision *servingv1.Revision) string {
+func getTargetTagFromRevision(revision *servingv1.Revision) string {
 	generation := -1
 
 	if revision != nil {

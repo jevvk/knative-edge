@@ -42,25 +42,49 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 	var service servingv1.Service
 
 	if err := r.Get(ctx, request.NamespacedName, &service); err != nil {
-		if !apierrors.IsNotFound(err) {
+		// something deleted the service before reconciling it
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
+		return ctrl.Result{}, err
+	}
+
+	var revision *servingv1.Revision
+	revisionNamespacedName := getRevisionNamespacedName(request.NamespacedName)
+
+	if !kServiceHasAnnotation(&service) {
+		// if the service doesn't have an annotation, it can mean 2 things
+		//   1. the annotation never existed, so the revision shouldn't exist
+		//   2. the annotation was removed, so the revision needs to be removed
+
+		if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return ctrl.Result{}, err
+			}
+
+			return ctrl.Result{}, nil
+		} else if err := r.Delete(ctx, revision); err != nil {
+			// something else deleted the revision
+			if apierrors.IsNotFound(err) {
+				return ctrl.Result{}, nil
+			}
+
+			// requeue on conflict
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
+
 			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{}, nil
 	}
 
-	if !kServiceHasAnnotation(&service) {
+	// if the target already exists, then exit early
+	if target := getComputeOffloadTrafficTarget(&service); target != nil {
 		return ctrl.Result{}, nil
 	}
-
-	target := getComputeOffloadTrafficTarget(&service)
-
-	if target != nil {
-		return ctrl.Result{}, nil
-	}
-
-	var revision *servingv1.Revision
-	revisionNamespacedName := getRevisionNamespacedName(request.NamespacedName)
 
 	// check if target revision exists, if it does, change the spec
 	// this is because we need to change the service if the service
@@ -73,6 +97,9 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
+	// we know the revision exists but the revision isn't set in the service,
+	// so we add it as a traffic target
+
 	var percent int64 = 0
 
 	service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
@@ -82,6 +109,8 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 	})
 
 	controllers.UpdateLastGenerationAnnotation(&service, &service)
+
+	// finally, update the service
 
 	if err := r.Update(ctx, &service); err != nil {
 		if apierrors.IsConflict(err) {

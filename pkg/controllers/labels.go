@@ -7,3 +7,8 @@ const (
 	ManagedByLabel   = "app.kubernetes.io/managed-by"
 	CreatedByLabel   = "app.kubernetes.io/created-by"
 )
+
+const (
+	ManagedByLabelValue = "knative-edge"
+	CreatedByLabelValue = "controller-manager"
+)

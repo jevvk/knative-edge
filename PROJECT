@@ -10,6 +10,6 @@ resources:
   domain: jevv.dev
   group: edge
   kind: EdgeCluster
-  path: edge.jevv.dev/pkg/apis/cloud/v1
+  path: edge.jevv.dev/pkg/apis/v1
   version: v1
 version: "3"

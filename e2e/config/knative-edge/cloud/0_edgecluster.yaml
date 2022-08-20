@@ -1,7 +1,7 @@
 apiVersion: edge.jevv.dev/v1
 kind: EdgeCluster
 metadata:
-  name: edgecluster-sample
+  name: e2e-edge
 spec:
   zone: zoneA
   region: regionA

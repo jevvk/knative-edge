@@ -1,7 +1,13 @@
 builds:
-- id: cloud
+- id: controller
   dir: .
-  main: ./cmd/cloud
+  main: ./cmd/controller
+  ldflags:
+  - -s
+  - -w
+- id: proxy
+  dir: .
+  main: ./cmd/proxy
   ldflags:
   - -s
   - -w

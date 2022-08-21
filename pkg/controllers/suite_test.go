@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	edgev1 "edge.jevv.dev/pkg/apis/v1"
+	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
 	//+kubebuilder:scaffold:imports
 )
 

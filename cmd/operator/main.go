@@ -20,13 +20,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -35,13 +34,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
-
+	operatorv1 "edge.jevv.dev/pkg/apis/operator/v1"
+	operatorcontrollers "edge.jevv.dev/pkg/controllers/operator"
 	//+kubebuilder:scaffold:imports
-
-	edgecontrollers "edge.jevv.dev/pkg/controllers/edge"
-	"edge.jevv.dev/pkg/reflector"
 )
 
 var (
@@ -52,20 +47,26 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(corev1.AddToScheme(scheme))
-	utilruntime.Must(servingv1.AddToScheme(scheme))
-	utilruntime.Must(edgev1.AddToScheme(scheme))
+	utilruntime.Must(operatorv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
 	var metricsAddr string
 	var probeAddr string
-	var environments string
+	var namespace string
+	var proxyImage string
+	var controllerImage string
+
+	var syncPeriodString string
+	syncPeriod := 5 * time.Minute
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&environments, "--envs", "", "A list of comma separated list of environments. The edge cluster will only listen and propagate to these environments.")
+	flag.StringVar(&namespace, "namespace", "knative-edge-system", "The namespace the operator listens to.")
+	flag.StringVar(&proxyImage, "proxy-image", "", "The image of the proxy component.")
+	flag.StringVar(&controllerImage, "controller-image", "", "The image of the controller component.")
+	flag.StringVar(&syncPeriodString, "sync-period", syncPeriod.String(), "The synchronization period. This is used in order to sync both the local cluster cache and the configurations from the remote clusters.")
 
 	opts := zap.Options{
 		Development: true,
@@ -77,15 +78,24 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	newSyncPeriod, err := time.ParseDuration(syncPeriodString)
+
+	if err != nil {
+		setupLog.Info(fmt.Sprintf("Provided sync period could not be parsed. Will default to %s.", syncPeriod))
+	} else {
+		syncPeriod = newSyncPeriod
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                        scheme,
 		MetricsBindAddress:            metricsAddr,
 		Port:                          9443,
 		HealthProbeBindAddress:        probeAddr,
 		LeaderElection:                true,
-		LeaderElectionID:              "ad6e1dd9.edge.jevv.dev",
+		LeaderElectionID:              "d0dsk0s.operator.edge.jevv.dev",
 		LeaderElectionReleaseOnCancel: true,
-		NewCache:                      edgecontrollers.ManagedScopedCache,
+		Namespace:                     namespace,
+		SyncPeriod:                    &syncPeriod,
 	})
 
 	if err != nil {
@@ -93,33 +103,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	reflector, err := reflector.New(strings.Split(environments, ","))
-
-	if err != nil {
-		setupLog.Error(err, "unable to create reflector", "component", "Reflector")
+	if err = (&operatorcontrollers.EdgeReconciler{
+		Client:          mgr.GetClient(),
+		Scheme:          mgr.GetScheme(),
+		ProxyImage:      proxyImage,
+		ControllerImage: controllerImage,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Edge")
 		os.Exit(1)
 	}
-
-	for _, reconciler := range reflector.GetReconcilers() {
-		if err = reconciler.Setup(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", reconciler.GetName())
-			os.Exit(1)
-		}
-	}
-
-	for _, reconciler := range reflector.GetReconcilers() {
-		checker := reconciler.GetHealthz()
-
-		if checker == nil {
-			continue
-		}
-
-		if err := mgr.AddHealthzCheck(reconciler.GetHealthzName(), checker); err != nil {
-			setupLog.Error(err, fmt.Sprintf("unable to set up health check for controller %s", reconciler.GetName()))
-			os.Exit(1)
-		}
-	}
-
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

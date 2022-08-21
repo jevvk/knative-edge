@@ -38,6 +38,7 @@ spec:
         args:
         - --leader-elect
         image: controller
+        imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

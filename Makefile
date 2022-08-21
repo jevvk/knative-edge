@@ -45,6 +45,7 @@ help: ## Display this help.
 .PHONY: env
 env: ## Displays the default environment variables
 	@echo "# build envs"
+	@echo "BASE_CMD=${BASE_CMD}"
 	@echo "PKG=${PKG}"
 	@echo "IMG=${IMG}"
 	@echo "REPO=${REPO}"
@@ -75,7 +76,8 @@ test: manifests generate fmt vet envtest ## Run tests.
 e2e-test: manifests generate fmt vet envtest kustomize kustomize-setup ## Run e2e tests.
 	@command -v kubectl > /dev/null || (echo "You must have 'kubectl' installed in order to run E2E tests."; exit 1)
 	@command -v kind > /dev/null || (echo "You must have 'kind' installed in order to run E2E tests."; exit 1)
-	@$(eval TMP := $(shell mktemp -d))
+	# @$(eval TMP := $(shell mktemp -d))
+	@$(eval TMP := $(shell echo "${PWD}/e2e/tmp"))
 
 	@echo ""
 	@echo "If kind fails to create the second cluster, add a '--retain' option to the command for further debugging."
@@ -86,7 +88,7 @@ e2e-test: manifests generate fmt vet envtest kustomize kustomize-setup ## Run e2
 		&& kind get kubeconfig --name knative-edge-e2e-cloud > $(TMP)/kubeconfig-cloud \
 		|| kind create cluster --name knative-edge-e2e-cloud --kubeconfig $(TMP)/kubeconfig-cloud --image kindest/node:v$(ENVTEST_K8S_VERSION) --wait 1m
 	(kind get clusters | grep knative-edge-e2e-edge > /dev/null) \
-		&& kind get kubeconfig --name knative-edge-e2e-cloud > $(TMP)/kubeconfig-edge \
+		&& kind get kubeconfig --name knative-edge-e2e-edge > $(TMP)/kubeconfig-edge \
 		|| kind create cluster --name knative-edge-e2e-edge --kubeconfig $(TMP)/kubeconfig-edge --image kindest/node:v$(ENVTEST_K8S_VERSION) --wait 1m
 
 	@echo ""
@@ -120,10 +122,11 @@ e2e-test: manifests generate fmt vet envtest kustomize kustomize-setup ## Run e2
 	KUBECONFIG=$(TMP)/kubeconfig-cloud kubectl apply -f e2e/config/knative-edge/cloud
 
 	KUBECONFIG=$(TMP)/kubeconfig-edge kubectl apply -f e2e/config/knative-edge/edge
-	$(KUSTOMIZE) build config/default | KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-edge ko apply -f -
+	$(KUSTOMIZE) build config/default | KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-edge ko resolve -f - | KUBECONFIG=$(TMP)/kubeconfig-edge kubectl apply -f -
 
-	(cd $(TMP) && mkdir secret && cd secret \
+	(cd $(TMP) && mkdir -p secret && cd secret \
 		&& kind get kubeconfig --name knative-edge-e2e-cloud > kubeconfig \
+		&& sed -i 's|server: https://.*|server: https://knative-edge-e2e-edge:6443|g' kubeconfig \
 		&& KUBECONFIG=$(TMP)/kubeconfig-edge kubectl delete secret -n knative-edge-system knative-edge-edgeconfig \
 		&& KUBECONFIG=$(TMP)/kubeconfig-edge kubectl create secret generic -n knative-edge-system knative-edge-edgeconfig --from-literal=name=e2e-edge --from-file=./kubeconfig)
 
@@ -133,14 +136,14 @@ e2e-test: manifests generate fmt vet envtest kustomize kustomize-setup ## Run e2
 	@echo "Running E2E tests..."
 
 	@echo "TODO"
-	rm -rf $(TMP)
+	# rm -rf $(TMP)
 
-# KUBECONFIG_CLOUD=$(TMP)/kubeconfig-cloud \
-# KUBECONFIG_EDGE=$(TMP)/kubeconfig-edge \
-# KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile e2e-cover.out
+	# KUBECONFIG_CLOUD=$(TMP)/kubeconfig-cloud \
+	# KUBECONFIG_EDGE=$(TMP)/kubeconfig-edge \
+	# KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile e2e-cover.out
 
-# @echo kind delete cluster --name knative-edge-e2e-cloud
-# @echo kind delete cluster --name knative-edge-e2e-edge
+	# @echo kind delete cluster --name knative-edge-e2e-cloud
+	# @echo kind delete cluster --name knative-edge-e2e-edge
 
 
 

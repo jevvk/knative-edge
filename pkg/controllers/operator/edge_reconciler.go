@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -166,6 +167,10 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		shouldCreate = !shouldDelete
 	}
 
+	if !shouldCreate && !shouldUpdate {
+		shouldUpdate = edge.Generation != edge.Status.EdgeObservedGeneration || edgeCluster.Generation != edge.Status.EdgeClusterObservedGeneration
+	}
+
 	if shouldCreate {
 		r.buildDeployment(namespacedDeploymentName, &edge, &edgeCluster, &deployment)
 		if err := r.Create(ctx, &deployment); err != nil {
@@ -177,6 +182,11 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		}
 
 		r.Recorder.Event(&edge, "DeploymentCreated", "deployment created", "Knative Edge deployment has been created.")
+
+		if err := r.updateEdgeStatus(ctx, &edge, &edgeCluster); err != nil {
+			// TODO: log instead
+			return ctrl.Result{}, err
+		}
 	} else if shouldUpdate {
 		r.buildDeployment(namespacedDeploymentName, &edge, &edgeCluster, &deployment)
 
@@ -189,6 +199,11 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		}
 
 		r.Recorder.Event(&edge, "DeploymentUpdated", "deployment updated", "Knative Edge deployment has been updated.")
+
+		if err := r.updateEdgeStatus(ctx, &edge, &edgeCluster); err != nil {
+			// TODO: log instead
+			return ctrl.Result{}, err
+		}
 	} else if shouldDelete {
 		if err := r.Delete(ctx, &deployment); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -260,6 +275,18 @@ func (r *EdgeReconciler) buildDeployment(namespacedName types.NamespacedName, ed
 	}
 
 	controllerutil.SetControllerReference(edge, deployment, r.Scheme)
+}
+
+func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.Edge, edgeCluster *edgev1.EdgeCluster) error {
+	edge.Status = operatorv1.EdgeStatus{
+		Zone:                          edgeCluster.Spec.Zone,
+		Region:                        edgeCluster.Spec.Region,
+		Environments:                  edgeCluster.Spec.Environments,
+		EdgeObservedGeneration:        edge.Generation,
+		EdgeClusterObservedGeneration: edgeCluster.Generation,
+	}
+
+	return r.Status().Update(ctx, edge)
 }
 
 func (r *EdgeReconciler) SetupWithManager(mgr ctrl.Manager) error {

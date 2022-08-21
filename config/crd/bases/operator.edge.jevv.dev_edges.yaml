@@ -76,6 +76,10 @@ spec:
                 items:
                   type: string
                 type: array
+              observedGenerationDeployment:
+                description: The observed generation of the Deployment
+                format: int64
+                type: integer
               observedGenerationEdge:
                 description: The observed generation of the Edge
                 format: int64
@@ -90,10 +94,6 @@ spec:
               zone:
                 description: The zone of the edge cluster.
                 type: string
-            required:
-            - environments
-            - observedGenerationEdge
-            - observedGenerationEdgeCluster
             type: object
         type: object
     served: true

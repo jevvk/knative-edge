@@ -59,14 +59,20 @@ func main() {
 	var controllerImage string
 
 	var syncPeriodString string
-	syncPeriod := 5 * time.Minute
+	syncPeriod := 1 * time.Minute
+
+	var remoteSyncPeriodString string
+	remoteSyncPeriod := 5 * time.Minute
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.StringVar(&namespace, "namespace", "knative-edge-system", "The namespace the operator listens to.")
+
 	flag.StringVar(&proxyImage, "proxy-image", "", "The image of the proxy component.")
 	flag.StringVar(&controllerImage, "controller-image", "", "The image of the controller component.")
-	flag.StringVar(&syncPeriodString, "sync-period", syncPeriod.String(), "The synchronization period. This is used in order to sync both the local cluster cache and the configurations from the remote clusters.")
+
+	flag.StringVar(&syncPeriodString, "sync-period", syncPeriod.String(), "The synchronization period for the local cluster cache.")
+	flag.StringVar(&remoteSyncPeriodString, "remote-sync-period", remoteSyncPeriod.String(), "The synchronization period for the remote cluster cache.")
 
 	opts := zap.Options{
 		Development: true,
@@ -81,9 +87,17 @@ func main() {
 	newSyncPeriod, err := time.ParseDuration(syncPeriodString)
 
 	if err != nil {
-		setupLog.Info(fmt.Sprintf("Provided sync period could not be parsed. Will default to %s.", syncPeriod))
+		setupLog.Info(fmt.Sprintf("Provided sync period for the local cluster could not be parsed. Will default to %s.", syncPeriod))
 	} else {
 		syncPeriod = newSyncPeriod
+	}
+
+	newSyncPeriod, err = time.ParseDuration(remoteSyncPeriodString)
+
+	if err != nil {
+		setupLog.Info(fmt.Sprintf("Provided sync period for the remote cluster could not be parsed. Will default to %s.", remoteSyncPeriod))
+	} else {
+		remoteSyncPeriod = newSyncPeriod
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -104,10 +118,11 @@ func main() {
 	}
 
 	if err = (&operatorcontrollers.EdgeReconciler{
-		Client:          mgr.GetClient(),
-		Scheme:          mgr.GetScheme(),
-		ProxyImage:      proxyImage,
-		ControllerImage: controllerImage,
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ProxyImage:       proxyImage,
+		ControllerImage:  controllerImage,
+		RemoteSyncPeriod: remoteSyncPeriod,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Edge")
 		os.Exit(1)

@@ -13,11 +13,9 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
 	operatorv1 "edge.jevv.dev/pkg/apis/operator/v1"
@@ -40,8 +38,9 @@ type EdgeReconciler struct {
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 
-	ProxyImage      string
-	ControllerImage string
+	ProxyImage       string
+	ControllerImage  string
+	RemoteSyncPeriod time.Duration
 
 	remoteClusters map[string]clusterWithExtras
 }
@@ -115,9 +114,9 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 				return ctrl.Result{}, nil
 			}
 
+			// resync cache once in a while
 			remoteCluster, err = cluster.New(kubeconfig, func(o *cluster.Options) {
-				// disable cache for reading from remote
-				o.ClientDisableCacheFor = []client.Object{&edgev1.EdgeCluster{}}
+				o.SyncPeriod = &r.RemoteSyncPeriod
 			})
 
 			if err != nil {
@@ -291,7 +290,7 @@ func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.
 
 func (r *EdgeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&operatorv1.Edge{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		For(&operatorv1.Edge{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

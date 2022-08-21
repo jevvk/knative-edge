@@ -2,21 +2,22 @@ package edge
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"edge.jevv.dev/pkg/controllers"
-	"edge.jevv.dev/pkg/labels"
 )
 
 type refGenerator[T client.Object] func() (T, T)
@@ -52,13 +53,14 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	localKind, remoteKind := r.RefGenerator()
 
 	shouldCreate := false
+	shouldUpdate := false
 	shouldDelete := false
 
 	if err := r.RemoteCluster.GetClient().Get(ctx, req.NamespacedName, remoteKind); err != nil {
 		if apierrors.IsNotFound(err) {
 			shouldDelete = true
 		} else {
-			return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -66,32 +68,64 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		if apierrors.IsNotFound(err) {
 			shouldCreate = true
 		} else {
-			return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
+			return ctrl.Result{}, err
 		}
 	}
 
-	r.RefMerger(remoteKind, localKind)
-
 	if !shouldDelete {
+		r.RefMerger(remoteKind, localKind)
+
 		kindLabels := localKind.GetLabels()
+		kindAnnotations := localKind.GetAnnotations()
 
 		if kindLabels == nil {
 			kindLabels = make(map[string]string)
 			localKind.SetLabels(kindLabels)
 		}
 
-		kindLabels[labels.ManagedLabel] = "true"
-		kindLabels[labels.ManagedByLabel] = "knative-edge-controller"
-		kindLabels[labels.CreatedByLabel] = "knative-edge-controller"
+		if kindAnnotations == nil {
+			kindAnnotations = make(map[string]string)
+			localKind.SetAnnotations(kindAnnotations)
+		}
+
+		remoteGeneration := fmt.Sprint(remoteKind.GetGeneration())
+		lastRemoteGeneration := kindAnnotations[controllers.LastRemoteGenerationAnnotation]
+
+		if lastRemoteGeneration != remoteGeneration {
+			shouldUpdate = lastRemoteGeneration != ""
+
+			controllers.UpdateLabels(localKind)
+			kindAnnotations[controllers.LastRemoteGenerationAnnotation] = remoteGeneration
+		}
 	}
 
 	if shouldCreate {
-		return ctrl.Result{}, r.Create(ctx, localKind)
+		if err := r.Create(ctx, localKind); err != nil {
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
+
+			return ctrl.Result{}, err
+		}
 	} else if shouldDelete {
-		return ctrl.Result{}, r.Delete(ctx, localKind)
-	} else {
-		return ctrl.Result{}, r.Update(ctx, localKind)
+		if err := r.Delete(ctx, localKind); err != nil {
+			if apierrors.IsNotFound(err) {
+				return ctrl.Result{}, nil
+			}
+
+			return ctrl.Result{}, err
+		}
+	} else if shouldUpdate {
+		if err := r.Update(ctx, localKind); err != nil {
+			if apierrors.IsConflict(err) {
+				return ctrl.Result{Requeue: true}, nil
+			}
+
+			return ctrl.Result{}, err
+		}
 	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *mirroringReconciler[T]) Setup(mgr ctrl.Manager) error {
@@ -102,11 +136,18 @@ func (r *mirroringReconciler[T]) Setup(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: kind1},
 			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(
+				predicate.And(
+					predicate.GenerationChangedPredicate{},
+					controllers.NotChangedByEdgeControllers{},
+				),
+			),
 		).
 		// remote watch
 		Watches(
 			source.NewKindWithCache(kind2, r.RemoteCluster.GetCache()),
 			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).
 		Complete(r)
 }

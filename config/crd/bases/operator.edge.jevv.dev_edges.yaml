@@ -16,13 +16,13 @@ spec:
   scope: Namespace
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.zone
+    - jsonPath: .status.zone
       name: Zone
       type: string
-    - jsonPath: .spec.region
+    - jsonPath: .status.region
       name: Region
       type: string
-    - jsonPath: .spec.environments
+    - jsonPath: .status.environments
       name: Environments
       priority: 1
       type: string
@@ -50,6 +50,10 @@ spec:
                 description: The name of the Edge Cluster. This is used for retrieving
                   EdgeCluster from the remote cluster.
                 type: string
+              overrideProxyImage:
+                description: Override the proxy image for forwarding edge requests
+                  to the cloud.
+                type: string
               secretRef:
                 description: The secret containing the kubeconfig to the remote cluster.
                 properties:
@@ -72,6 +76,14 @@ spec:
                 items:
                   type: string
                 type: array
+              observedGenerationEdge:
+                description: The observed generation of the Edge
+                format: int64
+                type: integer
+              observedGenerationEdgeCluster:
+                description: The observed generation of the EdgeCluster
+                format: int64
+                type: integer
               region:
                 description: The region where the edge cluster is located.
                 type: string
@@ -80,6 +92,8 @@ spec:
                 type: string
             required:
             - environments
+            - observedGenerationEdge
+            - observedGenerationEdgeCluster
             type: object
         type: object
     served: true

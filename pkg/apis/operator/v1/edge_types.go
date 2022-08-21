@@ -44,6 +44,11 @@ type EdgeStatus struct {
 	Region *string `json:"region"`
 	// The list of environments which are replicated to the edge cluster.
 	Environments []string `json:"environments"`
+
+	// The observed generation of the Edge
+	EdgeObservedGeneration int64 `json:"observedGenerationEdge"`
+	// The observed generation of the EdgeCluster
+	EdgeClusterObservedGeneration int64 `json:"observedGenerationEdgeCluster"`
 }
 
 // +kubebuilder:object:root=true

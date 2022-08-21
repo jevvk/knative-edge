@@ -167,7 +167,10 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	}
 
 	if !shouldCreate && !shouldUpdate {
-		shouldUpdate = edge.Generation != edge.Status.EdgeObservedGeneration || edgeCluster.Generation != edge.Status.EdgeClusterObservedGeneration
+		shouldUpdate =
+			deployment.Generation != edge.Status.DeploymentObservedGeneration ||
+				edge.Generation != edge.Status.EdgeObservedGeneration ||
+				edgeCluster.Generation != edge.Status.EdgeClusterObservedGeneration
 	}
 
 	if shouldCreate {
@@ -182,7 +185,7 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 
 		r.Recorder.Event(&edge, "DeploymentCreated", "deployment created", "Knative Edge deployment has been created.")
 
-		if err := r.updateEdgeStatus(ctx, &edge, &edgeCluster); err != nil {
+		if err := r.updateEdgeStatus(ctx, &edge, &edgeCluster, &deployment); err != nil {
 			// TODO: log instead
 			return ctrl.Result{}, err
 		}
@@ -199,7 +202,7 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 
 		r.Recorder.Event(&edge, "DeploymentUpdated", "deployment updated", "Knative Edge deployment has been updated.")
 
-		if err := r.updateEdgeStatus(ctx, &edge, &edgeCluster); err != nil {
+		if err := r.updateEdgeStatus(ctx, &edge, &edgeCluster, &deployment); err != nil {
 			// TODO: log instead
 			return ctrl.Result{}, err
 		}
@@ -276,11 +279,12 @@ func (r *EdgeReconciler) buildDeployment(namespacedName types.NamespacedName, ed
 	controllerutil.SetControllerReference(edge, deployment, r.Scheme)
 }
 
-func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.Edge, edgeCluster *edgev1.EdgeCluster) error {
+func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.Edge, edgeCluster *edgev1.EdgeCluster, deployment *appsv1.Deployment) error {
 	edge.Status = operatorv1.EdgeStatus{
 		Zone:                          edgeCluster.Spec.Zone,
 		Region:                        edgeCluster.Spec.Region,
 		Environments:                  edgeCluster.Spec.Environments,
+		DeploymentObservedGeneration:  deployment.Generation,
 		EdgeObservedGeneration:        edge.Generation,
 		EdgeClusterObservedGeneration: edgeCluster.Generation,
 	}

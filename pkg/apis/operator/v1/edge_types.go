@@ -43,11 +43,17 @@ type EdgeStatus struct {
 	// +optional
 	Region *string `json:"region"`
 	// The list of environments which are replicated to the edge cluster.
+	// +optional
 	Environments []string `json:"environments"`
 
+	// The observed generation of the Deployment
+	// +optional
+	DeploymentObservedGeneration int64 `json:"observedGenerationDeployment"`
 	// The observed generation of the Edge
+	// +optional
 	EdgeObservedGeneration int64 `json:"observedGenerationEdge"`
 	// The observed generation of the EdgeCluster
+	// +optional
 	EdgeClusterObservedGeneration int64 `json:"observedGenerationEdgeCluster"`
 }
 

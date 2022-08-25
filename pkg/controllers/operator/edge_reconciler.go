@@ -50,7 +50,7 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	shouldUpdate := false
 	shouldDelete := false
 
-	var edge operatorv1.Edge
+	var edge operatorv1.KnativeEdge
 	var edgeCluster edgev1.EdgeCluster
 
 	if err := r.Get(ctx, request.NamespacedName, &edge); err != nil {
@@ -61,7 +61,7 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 		shouldDelete = true
 	}
 
-	if !shouldDelete {
+	if !shouldDelete && edge.Spec.SecretRef != nil {
 		namespacedSecretName := types.NamespacedName{Name: edge.Spec.SecretRef.Name, Namespace: edge.Spec.SecretRef.Namespace}
 		var kubeconfigSecret corev1.Secret
 		var remoteCluster cluster.Cluster
@@ -219,7 +219,7 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-func (r *EdgeReconciler) buildDeployment(namespacedName types.NamespacedName, edge *operatorv1.Edge, edgeCluster *edgev1.EdgeCluster, deployment *appsv1.Deployment) {
+func (r *EdgeReconciler) buildDeployment(namespacedName types.NamespacedName, edge *operatorv1.KnativeEdge, edgeCluster *edgev1.EdgeCluster, deployment *appsv1.Deployment) {
 	replicas := int32(1)
 	labels := map[string]string{
 		"app":                     "knative-edge-controller",
@@ -279,8 +279,8 @@ func (r *EdgeReconciler) buildDeployment(namespacedName types.NamespacedName, ed
 	controllerutil.SetControllerReference(edge, deployment, r.Scheme)
 }
 
-func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.Edge, edgeCluster *edgev1.EdgeCluster, deployment *appsv1.Deployment) error {
-	edge.Status = operatorv1.EdgeStatus{
+func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.KnativeEdge, edgeCluster *edgev1.EdgeCluster, deployment *appsv1.Deployment) error {
+	edge.Status = operatorv1.KnativeEdgeStatus{
 		Zone:                          edgeCluster.Spec.Zone,
 		Region:                        edgeCluster.Spec.Region,
 		Environments:                  edgeCluster.Spec.Environments,
@@ -294,7 +294,7 @@ func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.
 
 func (r *EdgeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&operatorv1.Edge{}).
+		For(&operatorv1.KnativeEdge{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

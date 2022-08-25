@@ -85,6 +85,22 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
+	// ensure latest target is specified
+
+	if service.Spec.Traffic == nil {
+		service.Spec.Traffic = make([]servingv1.TrafficTarget, 0)
+	}
+
+	if target := getLatestResivionTarget(&service); target == nil {
+		var percent int64 = 100
+		var latestRevision bool = true
+
+		service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
+			LatestRevision: &latestRevision,
+			Percent:        &percent,
+		})
+	}
+
 	if target := getComputeOffloadTarget(&service); target != nil {
 		// if the target already exists, check if we need to change the tag
 

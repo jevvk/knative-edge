@@ -28,6 +28,8 @@ import (
 	"edge.jevv.dev/pkg/controllers"
 )
 
+//+kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch;create;update;patch;delete
+
 type KnativeServiceV1Reconciler struct {
 	controllers.EdgeOuterReconciler
 

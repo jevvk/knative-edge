@@ -25,6 +25,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//+kubebuilder:rbac:groups=operator.edge.jevv.dev,resources=edge,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=operator.edge.jevv.dev,resources=edge/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=operator.edge.jevv.dev,resources=edge/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=,resources=secrets,verbs=get
+
 type clusterWithExtras struct {
 	cluster          cluster.Cluster
 	ctx              context.Context

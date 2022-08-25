@@ -1,0 +1,20 @@
+# permissions for end users to view edgeclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: edgecluster-viewer-role
+rules:
+- apiGroups:
+  - edge.jevv.dev
+  resources:
+  - edgeclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - edge.jevv.dev
+  resources:
+  - edgeclusters/status
+  verbs:
+  - get

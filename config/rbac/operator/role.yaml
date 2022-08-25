@@ -5,7 +5,9 @@ metadata:
   creationTimestamp: null
   name: operator-role
 rules:
-- resources:
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - get

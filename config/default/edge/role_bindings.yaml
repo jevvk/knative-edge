@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: leader-election-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: operator-manager
+  namespace: system
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: proxy-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: operator-manager
+  namespace: system
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: system

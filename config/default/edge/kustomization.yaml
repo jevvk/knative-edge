@@ -1,0 +1,17 @@
+# Adds namespace to all resources.
+namespace: knative-edge-system
+namePrefix: knative-edge-
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../crd
+- namespace.yaml
+- ../../rbac/controller/edge
+- ../../rbac/operator
+- ../../rbac/bases/auth_proxy
+- ../../rbac/bases/leader_election
+- operator.yaml
+
+patchesStrategicMerge:
+- role_bindings.yaml

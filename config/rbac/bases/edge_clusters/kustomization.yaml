@@ -1,0 +1,3 @@
+resources:
+- edgecluster_editor_role.yaml
+- edgecluster_viewer_role.yaml

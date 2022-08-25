@@ -36,11 +36,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
+	"edge.jevv.dev/pkg/controllers"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
 	//+kubebuilder:scaffold:imports
 
 	edgecontrollers "edge.jevv.dev/pkg/controllers/edge"
+	"edge.jevv.dev/pkg/controllers/edge/computeoffload"
 	"edge.jevv.dev/pkg/reflector"
 )
 
@@ -96,21 +98,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	reflector, err := reflector.New(strings.Split(environments, ","))
+	reflector := reflector.New(strings.Split(environments, ","))
+	offloader := computeoffload.New(proxyImage)
 
-	if err != nil {
-		setupLog.Error(err, "unable to create reflector", "component", "Reflector")
-		os.Exit(1)
-	}
+	reflectorReconcilers := reflector.GetReconcilers()
+	offloaderReconcilers := offloader.GetReconcilers()
 
-	for _, reconciler := range reflector.GetReconcilers() {
+	reconcilers := make([]controllers.EdgeReconciler, len(reflectorReconcilers)+len(offloaderReconcilers))
+	i := copy(reconcilers[:], reflectorReconcilers)
+	i += copy(reconcilers[i:], offloaderReconcilers)
+
+	for _, reconciler := range reconcilers {
 		if err = reconciler.Setup(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", reconciler.GetName())
 			os.Exit(1)
 		}
 	}
 
-	for _, reconciler := range reflector.GetReconcilers() {
+	for _, reconciler := range reconcilers {
 		checker := reconciler.GetHealthz()
 
 		if checker == nil {

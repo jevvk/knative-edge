@@ -20,15 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ConnectionStatus displays whether the EdgeCluster is connected or not.
-// +kubebuilder:validation:Enum=Disconnected;Connected
-type ConnectionStatus string
-
-const (
-	Disconnected ConnectionStatus = "Disconnected"
-	Connected    ConnectionStatus = "Connected"
-)
-
 // EdgeClusterSpec defines the desired state of EdgeCluster
 type EdgeClusterSpec struct {
 	// The zone of the EdgeCluster.

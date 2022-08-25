@@ -54,7 +54,15 @@ env: ## Displays the default environment variables
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./pkg/..." output:crd:artifacts:config=config/crd/bases
+	test ! -f config/rbac/role.yaml || rm config/rbac/role.yaml
+
+	mkdir -p config/rbac/controller/edge
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./pkg/controllers/edge/..." output:crd:artifacts:config=config/crd/bases
+	test ! -f config/rbac/role.yaml || mv config/rbac/role.yaml config/rbac/controller/edge/role.yaml
+
+	mkdir -p config/rbac/operator
+	$(CONTROLLER_GEN) rbac:roleName=operator-role crd webhook paths="./pkg/controllers/operator/..." output:crd:artifacts:config=config/crd/bases
+	test ! -f config/rbac/role.yaml || mv config/rbac/role.yaml config/rbac/operator/role.yaml
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.

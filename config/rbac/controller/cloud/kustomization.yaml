@@ -1,0 +1,4 @@
+resources:
+- service_account.yaml
+- reflector_clusterrole.yaml
+- reflector_clusterrole_binding.yaml

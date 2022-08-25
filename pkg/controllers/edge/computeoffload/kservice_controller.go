@@ -6,7 +6,6 @@ import (
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -21,11 +20,11 @@ import (
 	"edge.jevv.dev/pkg/controllers"
 )
 
+//+kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch;create;update;patch;delete
+
 type KServiceReconciler struct {
 	client.Client
 	controllers.EdgeReconciler
-
-	Recorder record.EventRecorder
 }
 
 func (r *KServiceReconciler) GetName() string {
@@ -81,6 +80,22 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 		}
 
 		return ctrl.Result{}, nil
+	}
+
+	// ensure latest target is specified
+
+	if service.Spec.Traffic == nil {
+		service.Spec.Traffic = make([]servingv1.TrafficTarget, 0)
+	}
+
+	if target := getLatestResivionTarget(&service); target == nil {
+		var percent int64 = 100
+		var latestRevision bool = true
+
+		service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
+			LatestRevision: &latestRevision,
+			Percent:        &percent,
+		})
 	}
 
 	if target := getComputeOffloadTarget(&service); target != nil {

@@ -12,7 +12,7 @@ type Reflector struct {
 	knativeServingv1Reconciler edgecontrolers.KnativeServiceV1Reconciler
 }
 
-func New(envs []string) (*Reflector, error) {
+func New(envs []string) Reflector {
 	remoteCluster := NewRemoteClusterOrDie(func(opts *cluster.Options) {
 		opts.NewCache = edgecontrolers.EnvScopedCache(envs)
 	})
@@ -25,10 +25,10 @@ func New(envs []string) (*Reflector, error) {
 		RemoteCluster: remoteCluster,
 	}
 
-	return &Reflector{
+	return Reflector{
 		corev1Reconciler:           corev1Reconciler,
 		knativeServingv1Reconciler: knativeServingv1Reconciler,
-	}, nil
+	}
 }
 
 func (r Reflector) GetReconcilers() []controllers.EdgeReconciler {

@@ -43,6 +43,20 @@ func getComputeOffloadTarget(service *servingv1.Service) *servingv1.TrafficTarge
 	return nil
 }
 
+func getLatestResivionTarget(service *servingv1.Service) *servingv1.TrafficTarget {
+	if service == nil {
+		return nil
+	}
+
+	for _, target := range service.Spec.Traffic {
+		if target.LatestRevision != nil && *target.LatestRevision {
+			return &target
+		}
+	}
+
+	return nil
+}
+
 func getRevisionGenerationFromTarget(target *servingv1.TrafficTarget) string {
 	if target == nil {
 		return ""

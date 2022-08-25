@@ -2,6 +2,8 @@ package computeoffload
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -16,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
@@ -30,6 +33,8 @@ type KRevisionReconciler struct {
 	controllers.EdgeReconciler
 
 	Recorder record.EventRecorder
+
+	ProxyImage string
 }
 
 func (r *KRevisionReconciler) GetName() string {
@@ -141,11 +146,23 @@ func (r *KRevisionReconciler) buildRevision(namespacedName types.NamespacedName,
 				controllers.KnativeNoGCAnnotation: "true",
 			},
 		},
-		// TODO: create remote proxy
 		// TODO: pass domain mapping from remote
 		// TODO: set concurrency and timeout
-		// TODO: pass http proxy envs
-		Spec: servingv1.RevisionSpec{},
+		Spec: servingv1.RevisionSpec{
+			PodSpec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  fmt.Sprintf("%s-compute-offload-proxy", namespacedName.Name),
+						Image: r.ProxyImage,
+						Env: []corev1.EnvVar{
+							{Name: "HTTP_PROXY", Value: os.Getenv("HTTP_PROXY")},
+							{Name: "HTTPS_PROXY", Value: os.Getenv("HTTPS_PROXY")},
+							{Name: "NO_PROXY", Value: os.Getenv("NO_PROXY")},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

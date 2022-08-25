@@ -21,6 +21,8 @@ import (
 	"edge.jevv.dev/pkg/controllers"
 )
 
+//+kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch;create;update;patch;delete
+
 type KServiceReconciler struct {
 	client.Client
 	controllers.EdgeReconciler

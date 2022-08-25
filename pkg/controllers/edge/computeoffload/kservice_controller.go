@@ -6,7 +6,6 @@ import (
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -26,8 +25,6 @@ import (
 type KServiceReconciler struct {
 	client.Client
 	controllers.EdgeReconciler
-
-	Recorder record.EventRecorder
 }
 
 func (r *KServiceReconciler) GetName() string {

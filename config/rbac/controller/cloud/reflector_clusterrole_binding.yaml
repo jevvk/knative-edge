@@ -8,5 +8,5 @@ roleRef:
   name: reflector-role
 subjects:
 - kind: ServiceAccount
-  name: controller-manager-reflector
+  name: reflector
   namespace: system

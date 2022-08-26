@@ -54,6 +54,8 @@ env: ## Displays the default environment variables
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) crd paths="./pkg/apis/..." output:crd:artifacts:config=config/crd/bases
+
 	test ! -f config/rbac/role.yaml || rm config/rbac/role.yaml
 
 	mkdir -p config/rbac/controller/edge
@@ -81,7 +83,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 .PHONE: e2e-test
-e2e-test: manifests generate fmt vet envtest kustomize kustomize-setup ## Run e2e tests.
+e2e-test: manifests generate fmt vet envtest kustomize ## Run e2e tests.
 	@command -v kubectl > /dev/null || (echo "You must have 'kubectl' installed in order to run E2E tests."; exit 1)
 	@command -v kind > /dev/null || (echo "You must have 'kind' installed in order to run E2E tests."; exit 1)
 	# @$(eval TMP := $(shell mktemp -d))
@@ -98,6 +100,12 @@ e2e-test: manifests generate fmt vet envtest kustomize kustomize-setup ## Run e2
 	(kind get clusters | grep knative-edge-e2e-edge > /dev/null) \
 		&& kind get kubeconfig --name knative-edge-e2e-edge > $(TMP)/kubeconfig-edge \
 		|| kind create cluster --name knative-edge-e2e-edge --kubeconfig $(TMP)/kubeconfig-edge --image kindest/node:v$(ENVTEST_K8S_VERSION) --wait 1m
+
+	@echo ""
+	@echo "Deploying metrics server..."
+
+	$(KUSTOMIZE) build e2e/config/metrics | KUBECONFIG=$(TMP)/kubeconfig-cloud kubectl apply -f -
+	$(KUSTOMIZE) build e2e/config/metrics | KUBECONFIG=$(TMP)/kubeconfig-edge kubectl apply -f -
 
 	@echo ""
 	@echo "Deploying Knative Operator..."
@@ -118,25 +126,23 @@ e2e-test: manifests generate fmt vet envtest kustomize kustomize-setup ## Run e2
 	KUBECONFIG=$(TMP)/kubeconfig-edge kubectl wait -n knative-serving KnativeServing knative-serving --for condition=Ready=True --timeout=5m
 
 	@echo ""
-	@echo "Building Knative Edge..."
-
-	KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-edge ko build ${BASE_CMD}/proxy
-	KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-edge ko build ${BASE_CMD}/controller
-
-	@echo ""
 	@echo "Deploying Knative Edge..."
 
-	$(KUSTOMIZE) build config/crd | KUBECONFIG=$(TMP)/kubeconfig-cloud kubectl apply -f -
+	$(KUSTOMIZE) build config/default/cloud | KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-cloud ko resolve -f - | KUBECONFIG=$(TMP)/kubeconfig-cloud kubectl apply -f -
+	KUBECONFIG=$(TMP)/kubeconfig-cloud kubectl create token -n knative-edge-system knative-edge-reflector
 	KUBECONFIG=$(TMP)/kubeconfig-cloud kubectl apply -f e2e/config/knative-edge/cloud
 
-	KUBECONFIG=$(TMP)/kubeconfig-edge kubectl apply -f e2e/config/knative-edge/edge
-	$(KUSTOMIZE) build config/default | KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-edge ko resolve -f - | KUBECONFIG=$(TMP)/kubeconfig-edge kubectl apply -f -
+	$(KUSTOMIZE) build config/default/edge | KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-edge ko resolve -f - | KUBECONFIG=$(TMP)/kubeconfig-edge kubectl apply -f -
 
-	(cd $(TMP) && mkdir -p secret && cd secret \
-		&& kind get kubeconfig --name knative-edge-e2e-cloud > kubeconfig \
-		&& sed -i 's|server: https://.*|server: https://knative-edge-e2e-edge:6443|g' kubeconfig \
+	(mkdir -p $(TMP)/secret \
+		&& KUBECONFIG=$(TMP)/kubeconfig-cloud bash e2e/scripts/generate-kubeconfig.sh knative-edge-e2e-edge https://knative-edge-e2e-edge:6443 knative-edge-reflector knative-edge-system > $(TMP)/secret/kubeconfig \
+		&& cd $(TMP)/secret \
 		&& KUBECONFIG=$(TMP)/kubeconfig-edge kubectl delete secret -n knative-edge-system knative-edge-edgeconfig \
 		&& KUBECONFIG=$(TMP)/kubeconfig-edge kubectl create secret generic -n knative-edge-system knative-edge-edgeconfig --from-literal=name=e2e-edge --from-file=./kubeconfig)
+
+	KUBECONFIG=$(TMP)/kubeconfig-edge kubectl apply -f e2e/config/knative-edge/edge
+
+	exit 1
 
 	KUBECONFIG=$(TMP)/kubeconfig-edge kubectl wait -n knative-edge-system deployment/knative-edge-controller-manager --for condition=Available=True --timeout=1m
 
@@ -156,11 +162,6 @@ e2e-test: manifests generate fmt vet envtest kustomize kustomize-setup ## Run e2
 
 
 ##@ Build
-
-.PHONY: kustomize-setup
-kustomize-setup: ## Set the controller image using kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
@@ -185,15 +186,15 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | KO_DOCKER_REPO=${REPO} ko delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests kustomize kustomize-setup ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | KO_DOCKER_REPO=${REPO} ko apply -f -
 
 .PHONY: undeploy
-undeploy: kustomize kustomize-setup ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | KO_DOCKER_REPO=${REPO} ko delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: config-only
-config-only: kustomize kustomize-setup ## Display the YAML generated by kustomize
+config-only: kustomize ## Display the YAML generated by kustomize
 	$(KUSTOMIZE) build config/default
 
 ##@ Build Dependencies

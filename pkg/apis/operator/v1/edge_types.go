@@ -56,6 +56,9 @@ type KnativeEdgeStatus struct {
 	// The observed generation of the EdgeCluster
 	// +optional
 	EdgeClusterObservedGeneration int64 `json:"observedGenerationEdgeCluster"`
+
+	// The status conditions of KnativeEdge
+	Conditions []metav1.Condition `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true

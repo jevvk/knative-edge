@@ -1,0 +1,10 @@
+apiVersion: operator.edge.jevv.dev/v1
+kind: KnativeEdge
+metadata:
+  name: knative-edge
+  namespace: knative-edge-system
+spec:
+  clusterName: e2e-edge
+  secretRef:
+    name: knative-edge-edgeconfig
+    namespace: knative-edge-system

@@ -27,7 +27,7 @@ spec:
         - ko://edge.jevv.dev/cmd/proxy
         - --controller-image
         - ko://edge.jevv.dev/cmd/controller
-        image: controller
+        image: ko://edge.jevv.dev/cmd/operator
         imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false

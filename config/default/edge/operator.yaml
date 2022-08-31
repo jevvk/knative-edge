@@ -1,28 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: operator-manager
-  namespace: system
+  name: knative-edge-operator
+  namespace: default
   labels:
-    control-plane: operator-manager
+    service: knative-edge
+    control-plane: operator
 spec:
   selector:
     matchLabels:
-      control-plane: operator-manager
+      service: knative-edge
+      control-plane: operator
   replicas: 1
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: operator
+        kubectl.kubernetes.io/default-container: knative-edge-operator
       labels:
-        control-plane: operator-manager
+        service: knative-edge
+        control-plane: operator
     spec:
       securityContext:
         runAsNonRoot: true
       containers:
       - name: operator
         args:
-        - --leader-elect
         - --proxy-image
         - ko://edge.jevv.dev/cmd/proxy
         - --controller-image
@@ -54,6 +56,6 @@ spec:
             memory: 128Mi
           requests:
             cpu: 10m
-            memory: 64Mi
-      serviceAccountName: operator-manager
+            memory: 16Mi
+      serviceAccountName: knative-edge-operator
       terminationGracePeriodSeconds: 10

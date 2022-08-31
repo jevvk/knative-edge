@@ -13,7 +13,7 @@ spec:
     listKind: KnativeEdgeList
     plural: knativeedges
     singular: knativeedge
-  scope: Namespace
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.zone

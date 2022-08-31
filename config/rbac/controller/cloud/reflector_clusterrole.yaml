@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: reflector-role
+  name: knative-edge-reflector-role
 aggregationRule:
   clusterRoleSelectors:
   - matchLabels:

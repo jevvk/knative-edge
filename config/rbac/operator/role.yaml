@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: operator-role
+  name: knative-edge-operator-role
 rules:
 - apiGroups:
   - ""
@@ -26,7 +26,7 @@ rules:
 - apiGroups:
   - operator.edge.jevv.dev
   resources:
-  - edge
+  - knativeedges
   verbs:
   - create
   - delete
@@ -38,13 +38,13 @@ rules:
 - apiGroups:
   - operator.edge.jevv.dev
   resources:
-  - edge/finalizers
+  - knativeedges/finalizers
   verbs:
   - update
 - apiGroups:
   - operator.edge.jevv.dev
   resources:
-  - edge/status
+  - knativeedges/status
   verbs:
   - get
   - patch

@@ -1,23 +1,23 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: leader-election-rolebinding
+  name: knative-edge-leader-election-rolebinding
 subjects:
 - kind: ServiceAccount
-  name: operator-manager
-  namespace: system
+  name: knative-edge-operator
+  namespace: default
 - kind: ServiceAccount
-  name: controller-manager
-  namespace: system
+  name: knative-edge-controller
+  namespace: knative-edge-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: proxy-rolebinding
+  name: knative-edge-proxy-rolebinding
 subjects:
 - kind: ServiceAccount
-  name: operator-manager
-  namespace: system
+  name: knative-edge-operator
+  namespace: default
 - kind: ServiceAccount
-  name: controller-manager
-  namespace: system
+  name: knative-edge-controller
+  namespace: knative-edge-system

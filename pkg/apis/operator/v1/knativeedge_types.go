@@ -63,7 +63,7 @@ type KnativeEdgeStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Namespace
+// +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:printcolumn:name=Zone,JSONPath=".status.zone",type=string,priority=0
 // +kubebuilder:printcolumn:name=Region,JSONPath=".status.region",type=string,priority=0
 // +kubebuilder:printcolumn:name=Environments,JSONPath=".status.environments",type=string,priority=1

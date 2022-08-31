@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/edge.jevv.dev_edgeclusters.yaml
+- bases/operator.edge.jevv.dev_knativeedges.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

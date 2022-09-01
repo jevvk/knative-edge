@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -31,8 +32,12 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
+	ctrlcfgv1alpha1 "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 
 	operatorv1 "edge.jevv.dev/pkg/apis/operator/v1"
 	operatorcontrollers "edge.jevv.dev/pkg/controllers/operator"
@@ -51,28 +56,48 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+type defaultManagerOptions struct {
+	runtime.Object
+}
+
+func (o defaultManagerOptions) Complete() (ctrlcfgv1alpha1.ControllerManagerConfigurationSpec, error) {
+	leaderElect := true
+
+	return ctrlcfgv1alpha1.ControllerManagerConfigurationSpec{
+		Metrics: ctrlcfgv1alpha1.ControllerMetrics{
+			BindAddress: ":8080",
+		},
+		Health: ctrlcfgv1alpha1.ControllerHealth{
+			HealthProbeBindAddress: ":8081",
+		},
+		LeaderElection: &configv1alpha1.LeaderElectionConfiguration{
+			LeaderElect:  &leaderElect,
+			ResourceName: "d0dsk0s.operator.edge.jevv.dev",
+		},
+	}, nil
+}
+
 func main() {
+	var configFile string
 	var metricsAddr string
 	var probeAddr string
-	var namespace string
+
 	var proxyImage string
 	var controllerImage string
 
-	var syncPeriodString string
-	syncPeriod := 1 * time.Minute
-
-	var remoteSyncPeriodString string
+	defaultSyncPeriod := 1 * time.Minute
 	remoteSyncPeriod := 5 * time.Minute
 
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&namespace, "namespace", "knative-edge-system", "The namespace the operator listens to.")
+	flag.StringVar(&configFile, "config", "",
+		"The controller will load its initial configuration from this file. "+
+			"Omit this flag to use the default configuration values. "+
+			"Command-line flags override configuration from this file.")
+
+	flag.StringVar(&metricsAddr, "metrics-bind-address", "", "The address the metric endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", "", "The address the probe endpoint binds to.")
 
 	flag.StringVar(&proxyImage, "proxy-image", "", "The image of the proxy component.")
 	flag.StringVar(&controllerImage, "controller-image", "", "The image of the controller component.")
-
-	flag.StringVar(&syncPeriodString, "sync-period", syncPeriod.String(), "The synchronization period for the local cluster cache.")
-	flag.StringVar(&remoteSyncPeriodString, "remote-sync-period", remoteSyncPeriod.String(), "The synchronization period for the remote cluster cache.")
 
 	opts := zap.Options{
 		Development: true,
@@ -84,33 +109,49 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	newSyncPeriod, err := time.ParseDuration(syncPeriodString)
+	var err error
+	ctrlConfig := operatorv1.OperatorConfigSpec{}
 
-	if err != nil {
-		setupLog.Info(fmt.Sprintf("Provided sync period for the local cluster could not be parsed. Will default to %s.", syncPeriod))
-	} else {
-		syncPeriod = newSyncPeriod
+	options := ctrl.Options{Scheme: scheme}
+	// override flags
+	options.MetricsBindAddress = metricsAddr
+	options.HealthProbeBindAddress = probeAddr
+
+	// set defaults (shouldn't be overwritten)
+	options, _ = options.AndFrom(defaultManagerOptions{})
+
+	if configFile != "" {
+		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
+		if err != nil {
+			setupLog.Error(err, "unable to load the config file")
+			os.Exit(1)
+		}
 	}
 
-	newSyncPeriod, err = time.ParseDuration(remoteSyncPeriodString)
-
-	if err != nil {
-		setupLog.Info(fmt.Sprintf("Provided sync period for the remote cluster could not be parsed. Will default to %s.", remoteSyncPeriod))
-	} else {
-		remoteSyncPeriod = newSyncPeriod
+	if ctrlConfig.Options.RemoteSyncPeriod != nil {
+		remoteSyncPeriod = ctrlConfig.Options.RemoteSyncPeriod.Duration
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                        scheme,
-		MetricsBindAddress:            metricsAddr,
-		Port:                          9443,
-		HealthProbeBindAddress:        probeAddr,
-		LeaderElection:                true,
-		LeaderElectionID:              "d0dsk0s.operator.edge.jevv.dev",
-		LeaderElectionReleaseOnCancel: true,
-		Namespace:                     namespace,
-		SyncPeriod:                    &syncPeriod,
-	})
+	if ctrlConfig.Options.Namespaces == nil {
+		options.Namespace = ""
+		setupLog.Info("Operator namespaces are not set. All namespaces will be watched.")
+	} else if len(*ctrlConfig.Options.Namespaces) == 0 {
+		options.Namespace = (*ctrlConfig.Options.Namespaces)[0]
+		setupLog.Info("Operator will watch the following namespace: %s.", options.Namespace)
+	} else {
+		options.Namespace = ""
+		options.NewCache = cache.MultiNamespacedCacheBuilder(*ctrlConfig.Options.Namespaces)
+		setupLog.Info("Operator will watch the following namespaces: %s.", strings.Join(*ctrlConfig.Options.Namespaces, ", "))
+	}
+
+	if options.SyncPeriod == nil {
+		options.SyncPeriod = &defaultSyncPeriod
+	}
+
+	setupLog.Info(fmt.Sprintf("Local cluster cache sync period set to %s.", *options.SyncPeriod))
+	setupLog.Info(fmt.Sprintf("Remote cluster cache sync period set to %s.", remoteSyncPeriod))
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

@@ -161,6 +161,7 @@ func main() {
 	if err = (&operatorcontrollers.EdgeReconciler{
 		Client:           mgr.GetClient(),
 		Scheme:           mgr.GetScheme(),
+		Recorder:         mgr.GetEventRecorderFor("operator-knativeedge-reconciler"),
 		ProxyImage:       proxyImage,
 		ControllerImage:  controllerImage,
 		RemoteSyncPeriod: remoteSyncPeriod,

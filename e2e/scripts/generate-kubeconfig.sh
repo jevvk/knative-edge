@@ -14,9 +14,8 @@ CLUSTER_URL="$2"
 SERVICE_ACCOUNT_NAME="$3"
 NAMESPACE="$4"
 
-secretName=$(kubectl --namespace $NAMESPACE get serviceAccount $SERVICE_ACCOUNT_NAME -o jsonpath='{.secrets[0].name}')
-ca=$(kubectl --namespace $NAMESPACE get secret/$secretName -o jsonpath='{.data.ca\.crt}')
-token=$(kubectl --namespace $NAMESPACE get secret/$secretName -o jsonpath='{.data.token}' | base64 --decode)
+ca=$(kubectl config view --minify --raw --output 'jsonpath={..cluster.certificate-authority-data}')
+token=$(kubectl create token --namespace $NAMESPACE $SERVICE_ACCOUNT_NAME)
 
 echo "
 ---

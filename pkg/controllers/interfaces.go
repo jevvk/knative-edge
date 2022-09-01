@@ -10,7 +10,7 @@ type EdgeOuterReconciler interface {
 }
 
 type EdgeReconciler interface {
-	Setup(mgr ctrl.Manager) error
+	SetupWithManager(mgr ctrl.Manager) error
 	GetName() string
 	GetHealthz() healthz.Checker
 	GetHealthzName() string

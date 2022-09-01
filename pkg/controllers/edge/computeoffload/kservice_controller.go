@@ -10,10 +10,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
@@ -157,16 +155,14 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, request ctrl.Request
 	return ctrl.Result{}, nil
 }
 
-func (r *KServiceReconciler) Setup(mgr ctrl.Manager) error {
+func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		Watches(
-			&source.Kind{Type: &servingv1.Service{}},
-			&handler.EnqueueRequestForObject{},
+		For(
+			&servingv1.Service{},
 			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
 		).
-		Watches(
-			&source.Kind{Type: &servingv1.Revision{}},
-			&handler.EnqueueRequestForOwner{},
+		Owns(
+			&servingv1.Revision{},
 			builder.WithPredicates(
 				predicate.And(
 					predicate.GenerationChangedPredicate{},

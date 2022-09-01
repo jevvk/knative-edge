@@ -46,17 +46,17 @@ type KnativeServiceV1Reconciler struct {
 	// ConfigurationReconciler mirroringReconciler[*servingv1.Configuration]
 }
 
-func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
+func (r *KnativeServiceV1Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.ServiceReconciler = mirroringReconciler[*servingv1.Service]{
 		Name:          "KnativeServingV1/Service",
 		HealthzName:   "healthz-knative-servingv1-service",
 		Recorder:      mgr.GetEventRecorderFor("controller-knative-servingv1-service"),
 		Scheme:        mgr.GetScheme(),
 		RemoteCluster: r.RemoteCluster,
-		RefGenerator: func() (*servingv1.Service, *servingv1.Service) {
-			return &servingv1.Service{}, &servingv1.Service{}
+		KindGenerator: func() *servingv1.Service {
+			return &servingv1.Service{}
 		},
-		RefMerger: func(src, dst *servingv1.Service) error {
+		KindMerger: func(src, dst *servingv1.Service) error {
 			if src == nil {
 				return nil
 			}
@@ -95,7 +95,7 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 		},
 	}
 
-	if err := r.ServiceReconciler.Setup(mgr); err != nil {
+	if err := r.ServiceReconciler.SetupWithManager(mgr); err != nil {
 		return err
 	}
 
@@ -105,10 +105,10 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 	// 	Recorder:      mgr.GetEventRecorderFor("controller-knative-servingv1-revision"),
 	// 	Scheme:        mgr.GetScheme(),
 	// 	RemoteCluster: r.RemoteCluster,
-	// 	RefGenerator: func() (*servingv1.Revision, *servingv1.Revision) {
-	// 		return &servingv1.Revision{}, &servingv1.Revision{}
+	// 	KindGenerator: func() (*servingv1.Revision) {
+	// 		return &servingv1.Revision{}
 	// 	},
-	// 	RefMerger: func(src, dst *servingv1.Revision) error {
+	// 	KindMerger: func(src, dst *servingv1.Revision) error {
 	// 		if src == nil {
 	// 			return nil
 	// 		}
@@ -123,7 +123,7 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 	// 	},
 	// }
 
-	// if err := r.RevisionReconciler.Setup(mgr); err != nil {
+	// if err := r.RevisionReconciler.SetupWithManager(mgr); err != nil {
 	// 	return err
 	// }
 
@@ -133,10 +133,10 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 	// 	Recorder:      mgr.GetEventRecorderFor("controller-knative-servingv1-route"),
 	// 	Scheme:        mgr.GetScheme(),
 	// 	RemoteCluster: r.RemoteCluster,
-	// 	RefGenerator: func() (*servingv1.Route, *servingv1.Route) {
-	// 		return &servingv1.Route{}, &servingv1.Route{}
+	// 	KindGenerator: func() (*servingv1.Route) {
+	// 		return &servingv1.Route{}
 	// 	},
-	// 	RefMerger: func(src, dst *servingv1.Route) error {
+	// 	KindMerger: func(src, dst *servingv1.Route) error {
 	// 		if src == nil {
 	// 			return nil
 	// 		}
@@ -151,7 +151,7 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 	// 	},
 	// }
 
-	// if err := r.RouteReconciler.Setup(mgr); err != nil {
+	// if err := r.RouteReconciler.SetupWithManager(mgr); err != nil {
 	// 	return err
 	// }
 
@@ -161,10 +161,10 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 	// 	Recorder:      mgr.GetEventRecorderFor("controller-knative-servingv1-configuration"),
 	// 	Scheme:        mgr.GetScheme(),
 	// 	RemoteCluster: r.RemoteCluster,
-	// 	RefGenerator: func() (*servingv1.Configuration, *servingv1.Configuration) {
-	// 		return &servingv1.Configuration{}, &servingv1.Configuration{}
+	// 	KindGenerator: func() (*servingv1.Configuration) {
+	// 		return &servingv1.Configuration{}
 	// 	},
-	// 	RefMerger: func(src, dst *servingv1.Configuration) error {
+	// 	KindMerger: func(src, dst *servingv1.Configuration) error {
 	// 		if src == nil {
 	// 			return nil
 	// 		}
@@ -179,7 +179,7 @@ func (r *KnativeServiceV1Reconciler) Setup(mgr ctrl.Manager) error {
 	// 	},
 	// }
 
-	// if err := r.ConfigurationReconciler.Setup(mgr); err != nil {
+	// if err := r.ConfigurationReconciler.SetupWithManager(mgr); err != nil {
 	// 	return err
 	// }
 

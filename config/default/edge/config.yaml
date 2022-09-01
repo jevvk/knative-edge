@@ -1,0 +1,7 @@
+apiVersion: operator.edge.jevv.dev/v1
+kind: OperatorConfig
+syncPeriod: 30s
+operatorOptions:
+  remoteSyncPeriod: 5m
+  watchNamespaces:
+    - knative-edge

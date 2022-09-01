@@ -11,11 +11,11 @@ spec:
     matchLabels:
       service: knative-edge
       control-plane: operator
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: knative-edge-operator
+        kubectl.kubernetes.io/default-container: operator
       labels:
         service: knative-edge
         control-plane: operator
@@ -29,6 +29,8 @@ spec:
         - ko://edge.jevv.dev/cmd/proxy
         - --controller-image
         - ko://edge.jevv.dev/cmd/controller
+        - --config
+        - /var/run/config/operator.edge.jevv.dev/config.yaml
         image: ko://edge.jevv.dev/cmd/operator
         imagePullPolicy: IfNotPresent
         securityContext:
@@ -57,5 +59,13 @@ spec:
           requests:
             cpu: 10m
             memory: 16Mi
+        volumeMounts:
+        - name: knative-edge-operator-config
+          mountPath: /var/run/config/operator.edge.jevv.dev/config.yaml
+          subPath: config.yaml
+      volumes:
+      - name: knative-edge-operator-config
+        configMap:
+          name: knative-edge-operator-config
       serviceAccountName: knative-edge-operator
       terminationGracePeriodSeconds: 10

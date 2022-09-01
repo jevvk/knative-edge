@@ -11,7 +11,7 @@ spec:
     matchLabels:
       service: knative-edge
       control-plane: operator
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       annotations:

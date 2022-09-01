@@ -39,6 +39,7 @@ import (
 	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
 	ctrlcfgv1alpha1 "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 
+	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
 	operatorv1 "edge.jevv.dev/pkg/apis/operator/v1"
 	operatorcontrollers "edge.jevv.dev/pkg/controllers/operator"
 	//+kubebuilder:scaffold:imports
@@ -52,6 +53,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	utilruntime.Must(edgev1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -116,6 +118,7 @@ func main() {
 	// override flags
 	options.MetricsBindAddress = metricsAddr
 	options.HealthProbeBindAddress = probeAddr
+	options.LeaderElectionReleaseOnCancel = true
 
 	// set defaults (shouldn't be overwritten)
 	options, _ = options.AndFrom(defaultManagerOptions{})

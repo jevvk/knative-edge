@@ -31,6 +31,7 @@ import (
 //+kubebuilder:rbac:groups=operator.edge.jevv.dev,resources=knativeedges/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=events,verbs=create;update;patch
 
 type clusterWithExtras struct {
 	cluster          cluster.Cluster
@@ -87,9 +88,9 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 
 		if err := r.Get(ctx, namespacedSecretName, &kubeconfigSecret); err != nil {
 			if apierrors.IsNotFound(err) {
-				r.Recorder.Event(edge, "RemoteClusterError", "no kubeconfig", "Referenced secret doesn't exist.")
+				r.Recorder.Event(edge, "Warning", "RemoteKubeconfigMissing", "Referenced secret doesn't exist.")
 			} else {
-				r.Recorder.Event(edge, "RemoteClusterError", "no kubeconfig", fmt.Sprintf("Kubeconfig secret couldn't be retrieved: %s", err))
+				r.Recorder.Event(edge, "Warning", "RemoteKubeconfigError", fmt.Sprintf("Kubeconfig secret couldn't be retrieved: %s", err))
 			}
 
 			return nil
@@ -105,7 +106,7 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 			delete(r.remoteClusters, remoteClusterKey)
 			remoteClusterExists = false
 
-			r.Recorder.Event(edge, "RemoteClusterDisconnected", "remote cluster disconnected", "Remote cluster has been disconnected due to secret being changed.")
+			r.Recorder.Event(edge, "Normal", "RemoteClusterDisconnected", "Remote cluster has been disconnected due to secret being changed.")
 		}
 
 		if !remoteClusterExists {
@@ -113,21 +114,21 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 			kubeconfigData, exists := kubeconfigSecret.Data["kubeconfig"]
 
 			if !exists {
-				r.Recorder.Event(edge, "RemoteClusterError", "kubeconfig missing", "There is no kubeconfig available in the referenced secret.")
+				r.Recorder.Event(edge, "Warning", "KubeconfigMissing", "There is no kubeconfig available in the referenced secret.")
 				return nil
 			}
 
 			config, err := clientcmd.NewClientConfigFromBytes([]byte(kubeconfigData))
 
 			if err != nil {
-				r.Recorder.Event(edge, "RemoteClusterError", "kubeconfig parsing error", fmt.Sprintf("Kubeconfig couldn't be parsed: %s", err))
+				r.Recorder.Event(edge, "Warning", "KubeconfigParsingError", fmt.Sprintf("Kubeconfig couldn't be parsed: %s", err))
 				return nil
 			}
 
 			kubeconfig, err := config.ClientConfig()
 
 			if err != nil {
-				r.Recorder.Event(edge, "RemoteClusterError", "kubeconfig parsing error", fmt.Sprintf("Kubeconfig couldn't be retrieved: %s", err))
+				r.Recorder.Event(edge, "Warning", "KubeconfigParsingError", fmt.Sprintf("Kubeconfig couldn't be retrieved: %s", err))
 				return nil
 			}
 
@@ -135,10 +136,15 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 			// TODO: check later if disabling cache would be better
 			remoteCluster, err = cluster.New(kubeconfig, func(o *cluster.Options) {
 				o.SyncPeriod = &r.RemoteSyncPeriod
+				// // disable cache for reading from remote
+				// o.ClientDisableCacheFor = []client.Object{&edgev1.EdgeCluster{}}
 			})
 
 			if err != nil {
-				r.Recorder.Event(edge, "RemoteClusterError", "remote cluster error", fmt.Sprintf("Remote cluster couldn't be created: %s", err))
+				r.Log.Info(fmt.Sprintf("null checks %p", edge))
+				r.Log.Info(fmt.Sprintf("error %s", err))
+
+				r.Recorder.Event(edge, "Warning", "RemoteClusterError", fmt.Sprintf("Remote cluster couldn't be created: %s", err))
 				return nil
 			}
 
@@ -157,7 +163,7 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 
 			go remoteCluster.Start(remoteClusterCtx)
 
-			r.Recorder.Event(edge, "RemoteClusterConnected", "remote cluster created", "New remote cluster connection created.")
+			r.Recorder.Event(edge, "Normal", "RemoteClusterConnected", "New remote cluster connection created.")
 		}
 	}
 
@@ -219,7 +225,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1.K
 			}
 		}
 
-		r.Recorder.Event(edge, "SecretCreated", "secret created", "Knative Edge config has been created.")
+		r.Recorder.Event(edge, "Normal", "SecretCreated", "Knative Edge config has been created.")
 	} else if shouldUpdate {
 		r.buildSecret(namespacedSecretName, edge, &refSecret, &secret)
 		if err := r.Update(ctx, &secret); err != nil {
@@ -230,7 +236,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1.K
 			}
 		}
 
-		r.Recorder.Event(edge, "SecretUpdated", "secret updated", "Knative Edge config has been updated.")
+		r.Recorder.Event(edge, "Normal", "SecretUpdated", "Knative Edge config has been updated.")
 	} else if shouldDelete {
 		if err := r.Delete(ctx, &secret); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -270,11 +276,11 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 
 		if err := remoteCluster.GetClient().Get(ctx, namespacedEdgeClusterName, &edgeCluster); err != nil {
 			if apierrors.IsNotFound(err) {
-				r.Recorder.Event(edge, "EdgeClusterError", "no edgecluster", fmt.Sprintf("EdgeCluster %s hasn't been found in remote", edge.Spec.ClusterName))
+				r.Recorder.Event(edge, "Warning", "EdgeClusterError", fmt.Sprintf("EdgeCluster %s hasn't been found in remote", edge.Spec.ClusterName))
 				return ctrl.Result{}, nil
 			}
 
-			r.Recorder.Event(edge, "EdgeClusterError", "remote get error", fmt.Sprintf("EdgeCluster %s couldn't be retrieved: %s", edge.Spec.ClusterName, err))
+			r.Recorder.Event(edge, "Warning", "EdgeClusterError", fmt.Sprintf("EdgeCluster %s couldn't be retrieved: %s", edge.Spec.ClusterName, err))
 			return ctrl.Result{}, err
 		}
 	}
@@ -309,7 +315,7 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 			}
 		}
 
-		r.Recorder.Event(edge, "DeploymentCreated", "deployment created", "Knative Edge deployment has been created.")
+		r.Recorder.Event(edge, "Normal", "DeploymentCreated", "Knative Edge deployment has been created.")
 
 		if err := r.updateEdgeStatus(ctx, edge, &edgeCluster, &deployment); err != nil {
 			// TODO: log instead
@@ -325,7 +331,7 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 			}
 		}
 
-		r.Recorder.Event(edge, "DeploymentUpdated", "deployment updated", "Knative Edge deployment has been updated.")
+		r.Recorder.Event(edge, "Normal", "DeploymentUpdated", "Knative Edge deployment has been updated.")
 
 		if err := r.updateEdgeStatus(ctx, edge, &edgeCluster, &deployment); err != nil {
 			// TODO: log instead

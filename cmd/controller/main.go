@@ -70,7 +70,7 @@ func main() {
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 
 	flag.StringVar(&proxyImage, "proxy-image", "", "The image of the proxy component.")
-	flag.StringVar(&environments, "--envs", "", "A list of comma separated list of environments. The edge cluster will only listen and propagate to these environments.")
+	flag.StringVar(&environments, "envs", "", "A list of comma separated list of environments. The edge cluster will only listen and propagate to these environments.")
 
 	opts := zap.Options{
 		Development: true,

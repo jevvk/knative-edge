@@ -212,7 +212,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1.K
 	if !shouldCreate && !shouldUpdate {
 		shouldUpdate =
 			secret.Annotations == nil ||
-				secret.Annotations[controllers.ObserverGenerationAnnotation] == fmt.Sprint(refSecret.Generation)
+				secret.Annotations[controllers.ObserverGenerationAnnotation] != fmt.Sprint(refSecret.Generation)
 	}
 
 	if shouldCreate {

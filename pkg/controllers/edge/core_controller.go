@@ -40,17 +40,17 @@ type CoreV1Reconciler struct {
 	SecretReconciler    mirroringReconciler[*corev1.Secret]
 }
 
-func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
+func (r *CoreV1Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.NamespaceReconciler = mirroringReconciler[*corev1.Namespace]{
 		Name:          "CoreV1/namespace",
 		HealthzName:   "healthz-corev1-namespace",
 		Recorder:      mgr.GetEventRecorderFor("controller-corev1-namespace"),
 		Scheme:        mgr.GetScheme(),
 		RemoteCluster: r.RemoteCluster,
-		RefGenerator: func() (*corev1.Namespace, *corev1.Namespace) {
-			return &corev1.Namespace{}, &corev1.Namespace{}
+		KindGenerator: func() *corev1.Namespace {
+			return &corev1.Namespace{}
 		},
-		RefMerger: func(src, dst *corev1.Namespace) error {
+		KindMerger: func(src, dst *corev1.Namespace) error {
 			if src == nil {
 				return nil
 			}
@@ -70,7 +70,7 @@ func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
 		},
 	}
 
-	if err := r.NamespaceReconciler.Setup(mgr); err != nil {
+	if err := r.NamespaceReconciler.SetupWithManager(mgr); err != nil {
 		return err
 	}
 
@@ -80,10 +80,10 @@ func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
 		Recorder:      mgr.GetEventRecorderFor("controller-corev1-configmap"),
 		Scheme:        mgr.GetScheme(),
 		RemoteCluster: r.RemoteCluster,
-		RefGenerator: func() (*corev1.ConfigMap, *corev1.ConfigMap) {
-			return &corev1.ConfigMap{}, &corev1.ConfigMap{}
+		KindGenerator: func() *corev1.ConfigMap {
+			return &corev1.ConfigMap{}
 		},
-		RefMerger: func(src, dst *corev1.ConfigMap) error {
+		KindMerger: func(src, dst *corev1.ConfigMap) error {
 			if src == nil {
 				return nil
 			}
@@ -105,7 +105,7 @@ func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
 		},
 	}
 
-	if err := r.ConfigMapReconciler.Setup(mgr); err != nil {
+	if err := r.ConfigMapReconciler.SetupWithManager(mgr); err != nil {
 		return err
 	}
 
@@ -115,10 +115,10 @@ func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
 		Recorder:      mgr.GetEventRecorderFor("controller-corev1-secret"),
 		Scheme:        mgr.GetScheme(),
 		RemoteCluster: r.RemoteCluster,
-		RefGenerator: func() (*corev1.Secret, *corev1.Secret) {
-			return &corev1.Secret{}, &corev1.Secret{}
+		KindGenerator: func() *corev1.Secret {
+			return &corev1.Secret{}
 		},
-		RefMerger: func(src, dst *corev1.Secret) error {
+		KindMerger: func(src, dst *corev1.Secret) error {
 			if src == nil {
 				return nil
 			}
@@ -140,7 +140,7 @@ func (r *CoreV1Reconciler) Setup(mgr ctrl.Manager) error {
 		},
 	}
 
-	if err := r.SecretReconciler.Setup(mgr); err != nil {
+	if err := r.SecretReconciler.SetupWithManager(mgr); err != nil {
 		return err
 	}
 

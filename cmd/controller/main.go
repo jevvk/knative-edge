@@ -18,7 +18,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"strings"
 
@@ -36,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
-	"edge.jevv.dev/pkg/controllers"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
 	//+kubebuilder:scaffold:imports
@@ -98,50 +96,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	reflector := reflector.New(strings.Split(environments, ","))
-	offloader := computeoffload.New(proxyImage)
+	reflector := reflector.New(strings.Split(environments, ","), scheme)
 
-	reflectorReconcilers := reflector.GetReconcilers()
-	offloaderReconcilers := offloader.GetReconcilers()
-
-	reconcilers := make([]controllers.EdgeReconciler, len(reflectorReconcilers)+len(offloaderReconcilers))
-	i := copy(reconcilers[:], reflectorReconcilers)
-	i += copy(reconcilers[i:], offloaderReconcilers)
-
-	for _, reconciler := range reconcilers {
-		if err = reconciler.Setup(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", reconciler.GetName())
-			os.Exit(1)
-		}
+	if err := reflector.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Unable to setup reflector.")
+		os.Exit(1)
 	}
 
-	for _, reconciler := range reconcilers {
-		checker := reconciler.GetHealthz()
+	offloader := computeoffload.New(proxyImage)
 
-		if checker == nil {
-			continue
-		}
-
-		if err := mgr.AddHealthzCheck(reconciler.GetHealthzName(), checker); err != nil {
-			setupLog.Error(err, fmt.Sprintf("unable to set up health check for controller %s", reconciler.GetName()))
-			os.Exit(1)
-		}
+	if err := offloader.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Unable to setup compute offloader.")
+		os.Exit(1)
 	}
 
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		setupLog.Error(err, "Unable to set up health check.")
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		setupLog.Error(err, "Unable to set up ready check.")
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "Encountered fatal error running manager.")
 		os.Exit(1)
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -45,11 +47,13 @@ type EdgeReconciler struct {
 
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+	Log      logr.Logger
 
 	ProxyImage       string
 	ControllerImage  string
 	RemoteSyncPeriod time.Duration
 
+	mgr            ctrl.Manager
 	remoteClusters map[string]clusterWithExtras
 }
 
@@ -472,6 +476,11 @@ func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.
 }
 
 func (r *EdgeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Log = mgr.GetLogger().WithName("operator-knativeedge")
+
+	r.mgr = mgr
+	r.remoteClusters = make(map[string]clusterWithExtras)
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&operatorv1.KnativeEdge{}).
 		Owns(&appsv1.Deployment{}).

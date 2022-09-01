@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -20,21 +22,22 @@ import (
 	"edge.jevv.dev/pkg/controllers"
 )
 
-type refGenerator[T client.Object] func() (T, T)
-type refMerger[T client.Object] func(src, dst T) error
+type kindGenerator[T client.Object] func() T
+type kindMerger[T client.Object] func(src, dst T) error
 
 type mirroringReconciler[T client.Object] struct {
 	client.Client
 	controllers.EdgeReconciler
 
+	Log           logr.Logger
 	Scheme        *runtime.Scheme
 	Recorder      record.EventRecorder
 	RemoteCluster cluster.Cluster
 
-	Name         string
-	HealthzName  string
-	RefGenerator refGenerator[T]
-	RefMerger    refMerger[T]
+	Name          string
+	HealthzName   string
+	KindGenerator kindGenerator[T]
+	KindMerger    kindMerger[T]
 }
 
 func (r *mirroringReconciler[T]) GetName() string {
@@ -50,7 +53,7 @@ func (r *mirroringReconciler[T]) GetHealthzName() string {
 }
 
 func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	localKind, remoteKind := r.RefGenerator()
+	localKind, remoteKind := r.KindGenerator(), r.KindGenerator()
 
 	shouldCreate := false
 	shouldUpdate := false
@@ -73,7 +76,7 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if !shouldDelete {
-		r.RefMerger(remoteKind, localKind)
+		r.KindMerger(remoteKind, localKind)
 
 		kindLabels := localKind.GetLabels()
 		kindAnnotations := localKind.GetAnnotations()
@@ -128,14 +131,14 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	return ctrl.Result{}, nil
 }
 
-func (r *mirroringReconciler[T]) Setup(mgr ctrl.Manager) error {
-	kind1, kind2 := r.RefGenerator()
+func (r *mirroringReconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
+	r.Log = mgr.GetLogger().WithName("controller").WithName(r.Name)
+	r.Log.Info("Setting up controller.", "controller", r.Name)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		// local watch
-		Watches(
-			&source.Kind{Type: kind1},
-			&handler.EnqueueRequestForObject{},
+		For(
+			r.KindGenerator(),
 			builder.WithPredicates(
 				predicate.And(
 					predicate.GenerationChangedPredicate{},
@@ -145,7 +148,7 @@ func (r *mirroringReconciler[T]) Setup(mgr ctrl.Manager) error {
 		).
 		// remote watch
 		Watches(
-			source.NewKindWithCache(kind2, r.RemoteCluster.GetCache()),
+			source.NewKindWithCache(r.KindGenerator(), r.RemoteCluster.GetCache()),
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).

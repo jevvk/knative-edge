@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: knative-edge-operator-config
+  namespace: default
+data:
+  config.yaml: |
+    apiVersion: operator.edge.jevv.dev/v1
+    kind: OperatorConfig
+    syncPeriod: 30s
+    operatorOptions:
+      remoteSyncPeriod: 5m
+      watchNamespaces:
+        - knative-edge
+        - knative-edge-e2e

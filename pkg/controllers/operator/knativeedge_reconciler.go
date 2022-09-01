@@ -31,8 +31,9 @@ import (
 //+kubebuilder:rbac:groups=operator.edge.jevv.dev,resources=knativeedges,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=operator.edge.jevv.dev,resources=knativeedges/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=operator.edge.jevv.dev,resources=knativeedges/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,namespace=knative-edge-system,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=secrets,namespace=knative-edge-system,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get
 //+kubebuilder:rbac:groups=core,resources=events,verbs=create;update;patch
 
 type clusterWithExtras struct {
@@ -100,7 +101,7 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 			return nil
 		}
 
-		remoteClusterKey := getRemoteClusterName(edge.Name, edge.Namespace).String()
+		remoteClusterKey := getRemoteClusterName(edge.Name, controllers.SystemNamespace).String()
 		existingRemoteCluster, remoteClusterExists := r.remoteClusters[remoteClusterKey]
 
 		// if connection exists, but the secret changed, then disconnect the cluster
@@ -204,7 +205,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1.K
 		}
 	}
 
-	namespacedSecretName := getSecretName(edge.Name, edge.Namespace)
+	namespacedSecretName := getSecretName(edge.Name, controllers.SystemNamespace)
 	var secret corev1.Secret
 
 	// if the name and namespace match, just skip copying
@@ -275,7 +276,7 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 	if !shouldDelete && edge.Spec.SecretRef != nil {
 		namespacedEdgeClusterName := types.NamespacedName{Name: edge.Spec.ClusterName, Namespace: ""}
 
-		remoteClusterKey := getRemoteClusterName(edge.Name, edge.Namespace).String()
+		remoteClusterKey := getRemoteClusterName(edge.Name, controllers.SystemNamespace).String()
 		existingRemoteCluster, remoteClusterExists := r.remoteClusters[remoteClusterKey]
 
 		if !remoteClusterExists {
@@ -296,8 +297,8 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 		}
 	}
 
-	namespacedDeploymentName := getDeploymentName(edge.Name, edge.Namespace)
-	namespacedSecretName := getSecretName(edge.Name, edge.Namespace)
+	namespacedDeploymentName := getDeploymentName(edge.Name, controllers.SystemNamespace)
+	namespacedSecretName := getSecretName(edge.Name, controllers.SystemNamespace)
 
 	var deployment appsv1.Deployment
 

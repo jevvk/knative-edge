@@ -50,9 +50,9 @@ $KUSTOMIZE build config/default/edge | KO_DOCKER_REPO=kind.local KIND_CLUSTER_NA
 KUBECONFIG=$TMP/kubeconfig-edge kubectl create namespace knative-edge-e2e --dry-run=client -o yaml | KUBECONFIG=$TMP/kubeconfig-edge kubectl apply -f -
 
 (mkdir -p $TMP/secret \
-    && KUBECONFIG=$TMP/kubeconfig-cloud bash e2e/scripts/generate-kubeconfig.sh knative-edge-e2e-edge https://knative-edge-e2e-edge:6443 knative-edge-reflector knative-edge-system > $TMP/secret/kubeconfig \
+    && KUBECONFIG=$TMP/kubeconfig-cloud bash e2e/scripts/generate-kubeconfig.sh knative-edge-e2e-edge https://knative-edge-e2e-cloud-control-plane:6443 knative-edge-reflector knative-edge-system > $TMP/secret/kubeconfig \
     && cd $TMP/secret \
-    && KUBECONFIG=$TMP/kubeconfig-edge kubectl create secret generic knative-edge-kubeconfig --from-file=./kubeconfig --dry-run=client -o yaml | KUBECONFIG=$TMP/kubeconfig-edge kubectl apply -f -)
+    && KUBECONFIG=$TMP/kubeconfig-edge kubectl -n knative-edge-e2e create secret generic knative-edge-kubeconfig --from-file=./kubeconfig --dry-run=client -o yaml | KUBECONFIG=$TMP/kubeconfig-edge kubectl apply -f -)
 
 # && KUBECONFIG=$TMP/kubeconfig-edge kubectl create secret generic -n knative-edge-e2e knative-edge-kubeconfig --from-literal=name=e2e-edge --from-file=./kubeconfig --dry-run=client -o yaml | KUBECONFIG=$TMP/kubeconfig-edge kubectl apply -f)
 

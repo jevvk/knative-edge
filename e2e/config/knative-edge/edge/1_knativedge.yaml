@@ -2,9 +2,9 @@ apiVersion: operator.edge.jevv.dev/v1
 kind: KnativeEdge
 metadata:
   name: knative-edge
-  namespace: default
+  namespace: knative-edge-e2e
 spec:
   clusterName: e2e-edge
   secretRef:
     name: knative-edge-kubeconfig
-    namespace: default
+    namespace: knative-edge-e2e

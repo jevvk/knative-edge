@@ -136,6 +136,7 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 			// TODO: check later if disabling cache would be better
 			remoteCluster, err = cluster.New(kubeconfig, func(o *cluster.Options) {
 				o.SyncPeriod = &r.RemoteSyncPeriod
+				o.Scheme = r.Scheme
 				// // disable cache for reading from remote
 				// o.ClientDisableCacheFor = []client.Object{&edgev1.EdgeCluster{}}
 			})
@@ -159,6 +160,12 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 				ctx:              remoteClusterCtx,
 				stop:             remoteClusterStop,
 				secretGeneration: kubeconfigSecret.Generation,
+			}
+
+			// inject dependencies
+			if err := r.mgr.SetFields(remoteCluster); err != nil {
+				r.Recorder.Event(edge, "Warning", "RemoteClusterInternalError", fmt.Sprintf("Remote setup failed: %s", err))
+				return nil
 			}
 
 			go remoteCluster.Start(remoteClusterCtx)

@@ -39,6 +39,8 @@ import (
 	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
 	ctrlcfgv1alpha1 "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 
+	"edge.jevv.dev/pkg/controllers"
+
 	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
 	operatorv1 "edge.jevv.dev/pkg/apis/operator/v1"
 	operatorcontrollers "edge.jevv.dev/pkg/controllers/operator"
@@ -138,12 +140,11 @@ func main() {
 	if ctrlConfig.Options.Namespaces == nil {
 		options.Namespace = ""
 		setupLog.Info("Operator namespaces are not set. All namespaces will be watched.")
-	} else if len(*ctrlConfig.Options.Namespaces) == 1 {
-		options.Namespace = (*ctrlConfig.Options.Namespaces)[0]
-		setupLog.Info(fmt.Sprintf("Operator will watch the following namespace: %s.", options.Namespace))
 	} else {
+		namespaces := withSystemNamespace(*ctrlConfig.Options.Namespaces)
+		options.NewCache = cache.MultiNamespacedCacheBuilder(namespaces)
 		options.Namespace = ""
-		options.NewCache = cache.MultiNamespacedCacheBuilder(*ctrlConfig.Options.Namespaces)
+
 		setupLog.Info(fmt.Sprintf("Operator will watch the following namespaces: %s.", strings.Join(*ctrlConfig.Options.Namespaces, ", ")))
 	}
 
@@ -188,4 +189,21 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func withSystemNamespace(namespaces []string) []string {
+	exists := false
+
+	for _, namespace := range namespaces {
+		if namespace == controllers.SystemNamespace {
+			exists = true
+			break
+		}
+	}
+
+	if exists {
+		return namespaces
+	}
+
+	return append(namespaces, controllers.SystemNamespace)
 }

@@ -110,7 +110,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	var err error
-	ctrlConfig := operatorv1.OperatorConfigSpec{}
+	ctrlConfig := operatorv1.OperatorConfig{}
 
 	options := ctrl.Options{Scheme: scheme}
 	// override flags
@@ -135,13 +135,13 @@ func main() {
 	if ctrlConfig.Options.Namespaces == nil {
 		options.Namespace = ""
 		setupLog.Info("Operator namespaces are not set. All namespaces will be watched.")
-	} else if len(*ctrlConfig.Options.Namespaces) == 0 {
+	} else if len(*ctrlConfig.Options.Namespaces) == 1 {
 		options.Namespace = (*ctrlConfig.Options.Namespaces)[0]
-		setupLog.Info("Operator will watch the following namespace: %s.", options.Namespace)
+		setupLog.Info(fmt.Sprintf("Operator will watch the following namespace: %s.", options.Namespace))
 	} else {
 		options.Namespace = ""
 		options.NewCache = cache.MultiNamespacedCacheBuilder(*ctrlConfig.Options.Namespaces)
-		setupLog.Info("Operator will watch the following namespaces: %s.", strings.Join(*ctrlConfig.Options.Namespaces, ", "))
+		setupLog.Info(fmt.Sprintf("Operator will watch the following namespaces: %s.", strings.Join(*ctrlConfig.Options.Namespaces, ", ")))
 	}
 
 	if options.SyncPeriod == nil {

@@ -7,5 +7,14 @@ resources:
 - ../../rbac/bases/leader_election
 - operator.yaml
 
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: knative-edge-operator-config
+  namespace: default
+  files:
+  - config.yaml
+
 patchesStrategicMerge:
 - role_bindings.yaml

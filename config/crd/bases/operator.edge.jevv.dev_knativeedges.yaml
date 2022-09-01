@@ -32,7 +32,7 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: KnativeEdge is the Schema for the Edges API
+        description: KnativeEdge is the Schema for the KnativeEdges API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -47,7 +47,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: KnativeEdgeSpec defines the desired state of Edge
+            description: KnativeEdgeSpec defines the desired state of KnativeEdge
             properties:
               clusterName:
                 description: The name of the Edge Cluster. This is used for retrieving
@@ -72,7 +72,7 @@ spec:
                 type: object
             type: object
           status:
-            description: KnativeEdgeStatus defines the observed state of Edge
+            description: KnativeEdgeStatus defines the observed state of KnativeEdge
             properties:
               conditions:
                 description: The status conditions of KnativeEdge

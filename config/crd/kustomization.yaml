@@ -4,7 +4,6 @@
 resources:
 - bases/edge.jevv.dev_edgeclusters.yaml
 - bases/operator.edge.jevv.dev_knativeedges.yaml
-- bases/operator.edge.jevv.dev_operatorconfigs.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

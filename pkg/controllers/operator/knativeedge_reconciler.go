@@ -357,6 +357,14 @@ func getDeploymentName(name, namespace string) types.NamespacedName {
 }
 
 func (r *EdgeReconciler) buildSecret(namespacedName types.NamespacedName, edge *operatorv1.KnativeEdge, src, dst *corev1.Secret) {
+	if src == nil {
+		return
+	}
+
+	if dst == nil {
+		*dst = corev1.Secret{}
+	}
+
 	if dst.Annotations == nil {
 		dst.Annotations = make(map[string]string)
 	}

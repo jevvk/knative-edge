@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// KnativeEdgeSpec defines the desired state of Edge
+// KnativeEdgeSpec defines the desired state of KnativeEdge
 type KnativeEdgeSpec struct {
 	// The name of the Edge Cluster. This is used for retrieving EdgeCluster from the remote cluster.
 	// +kubebuilder:validation:MinLength:=3
@@ -35,7 +35,7 @@ type KnativeEdgeSpec struct {
 	SecretRef *corev1.SecretReference `json:"secretRef,omitempty"`
 }
 
-// KnativeEdgeStatus defines the observed state of Edge
+// KnativeEdgeStatus defines the observed state of KnativeEdge
 type KnativeEdgeStatus struct {
 	// The zone of the edge cluster.
 	// +optional
@@ -69,7 +69,7 @@ type KnativeEdgeStatus struct {
 // +kubebuilder:printcolumn:name=Region,JSONPath=".status.region",type=string,priority=0
 // +kubebuilder:printcolumn:name=Environments,JSONPath=".status.environments",type=string,priority=1
 
-// KnativeEdge is the Schema for the Edges API
+// KnativeEdge is the Schema for the KnativeEdges API
 type KnativeEdge struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -80,7 +80,7 @@ type KnativeEdge struct {
 
 //+kubebuilder:object:root=true
 
-// KnativeEdgeList contains a list of Edge
+// KnativeEdgeList contains a list of KnativeEdge
 type KnativeEdgeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

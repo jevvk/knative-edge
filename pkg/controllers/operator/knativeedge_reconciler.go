@@ -248,7 +248,8 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1.K
 		}
 	}
 
-	if !shouldCreate && !shouldUpdate {
+	// FIXME: could try to compare the objects (e.g in case the controller image changes)
+	if !shouldCreate && !shouldDelete {
 		shouldUpdate =
 			secret.Annotations == nil ||
 				secret.Annotations[controllers.ObserverGenerationAnnotation] != fmt.Sprint(refSecret.Generation)

@@ -473,6 +473,7 @@ func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName ty
 				Labels: labels,
 			},
 			Spec: corev1.PodSpec{
+				ServiceAccountName: controllers.ControllerServiceAccount,
 				Containers: []corev1.Container{
 					{
 						Image: r.ControllerImage,

@@ -113,6 +113,7 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 
 		r.Log.Info("Retrieving KnativeEdge referenced secret.", "secret", namespacedSecretName.String())
 
+		// FIXME: find a way to cache this
 		if err := r.reader.Get(ctx, namespacedSecretName, &kubeconfigSecret); err != nil {
 			if apierrors.IsNotFound(err) {
 				r.Recorder.Event(edge, "Warning", "RemoteKubeconfigMissing", "Referenced secret doesn't exist.")

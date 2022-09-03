@@ -1,7 +1,8 @@
 package controllers
 
 const (
-	SystemNamespace = "knative-edge-system"
+	SystemNamespace          = "knative-edge-system"
+	ControllerServiceAccount = "knative-edge-controller"
 )
 
 const (

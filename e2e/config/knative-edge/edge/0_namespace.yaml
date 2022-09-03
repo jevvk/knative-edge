@@ -1,4 +1,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: knative-edge
+  name: knative-edge-e2e

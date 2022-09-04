@@ -353,11 +353,24 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 		shouldCreate = !shouldDelete
 	}
 
-	if !shouldCreate && !shouldUpdate {
+	if !shouldCreate && !shouldDelete {
+		annotations := deployment.Annotations
+		if annotations == nil {
+			annotations = make(map[string]string)
+			// don't need to replace deployment annotations here, will be done in the update
+		}
+
+		proxyImage := r.ProxyImage
+		if edge.Spec.OverrideProxyImage != "" {
+			proxyImage = edge.Spec.OverrideProxyImage
+		}
+
 		shouldUpdate =
 			deployment.Generation != edge.Status.DeploymentObservedGeneration ||
 				edge.Generation != edge.Status.EdgeObservedGeneration ||
-				edgeCluster.Generation != edge.Status.EdgeClusterObservedGeneration
+				edgeCluster.Generation != edge.Status.EdgeClusterObservedGeneration ||
+				annotations[controllers.ProxyImageAnnotation] != proxyImage ||
+				annotations[controllers.ControllerImageAnnotation] != r.ControllerImage
 	}
 
 	if shouldCreate {
@@ -458,8 +471,17 @@ func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName ty
 		proxyImage = edge.Spec.OverrideProxyImage
 	}
 
+	annotations := deployment.Annotations
+	if annotations == nil {
+		annotations = make(map[string]string)
+		deployment.Annotations = annotations
+	}
+
 	deployment.Name = namespacedName.Name
 	deployment.Namespace = namespacedName.Namespace
+
+	annotations[controllers.ProxyImageAnnotation] = proxyImage
+	annotations[controllers.ControllerImageAnnotation] = r.ControllerImage
 
 	deployment.Spec = appsv1.DeploymentSpec{
 		Replicas: &replicas,

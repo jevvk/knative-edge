@@ -30,7 +30,7 @@ spec:
       name: Last Reported
       priority: 1
       type: string
-    name: v1
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: EdgeCluster is the Schema for the edgeclusters API

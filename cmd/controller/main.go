@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
+	edgev1alpha1 "edge.jevv.dev/pkg/apis/edge/v1alpha1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
 	//+kubebuilder:scaffold:imports
@@ -54,7 +54,7 @@ func init() {
 
 	utilruntime.Must(corev1.AddToScheme(scheme))
 	utilruntime.Must(servingv1.AddToScheme(scheme))
-	utilruntime.Must(edgev1.AddToScheme(scheme))
+	utilruntime.Must(edgev1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

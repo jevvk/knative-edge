@@ -41,9 +41,10 @@ import (
 
 	"edge.jevv.dev/pkg/controllers"
 
-	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
-	operatorv1 "edge.jevv.dev/pkg/apis/operator/v1"
+	edgev1alpha1 "edge.jevv.dev/pkg/apis/edge/v1alpha1"
+	operatorv1alpha1 "edge.jevv.dev/pkg/apis/operator/v1alpha1"
 	operatorcontrollers "edge.jevv.dev/pkg/controllers/operator"
+	appsv1 "k8s.io/api/apps/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -55,8 +56,9 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(edgev1.AddToScheme(scheme))
-	utilruntime.Must(operatorv1.AddToScheme(scheme))
+	utilruntime.Must(appsv1.AddToScheme(scheme))
+	utilruntime.Must(edgev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -114,7 +116,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	var err error
-	ctrlConfig := operatorv1.OperatorConfig{}
+	ctrlConfig := operatorv1alpha1.OperatorConfig{}
 
 	options := ctrl.Options{Scheme: scheme}
 	// override flags

@@ -29,7 +29,7 @@ spec:
       name: Environments
       priority: 1
       type: string
-    name: v1
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: KnativeEdge is the Schema for the KnativeEdges API

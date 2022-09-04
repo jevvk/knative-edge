@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +45,7 @@ type KnativeEdgeStatus struct {
 	Region *string `json:"region"`
 	// The list of environments which are replicated to the edge cluster.
 	// +optional
-	Environments []string `json:"environments"`
+	Environments string `json:"environments"`
 
 	// The observed generation of the Deployment
 	// +optional

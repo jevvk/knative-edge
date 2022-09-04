@@ -22,8 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	edgev1 "edge.jevv.dev/pkg/apis/edge/v1"
-	operatorv1 "edge.jevv.dev/pkg/apis/operator/v1"
+	edgev1alpha1 "edge.jevv.dev/pkg/apis/edge/v1alpha1"
+	operatorv1alpha1 "edge.jevv.dev/pkg/apis/operator/v1alpha1"
 	"edge.jevv.dev/pkg/controllers"
 	"edge.jevv.dev/pkg/reflector"
 	appsv1 "k8s.io/api/apps/v1"
@@ -73,7 +73,7 @@ func (r *EdgeReconciler) InjectAPIReader(reader client.Reader) error {
 }
 
 func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-	var edge operatorv1.KnativeEdge
+	var edge operatorv1alpha1.KnativeEdge
 
 	if err := r.Get(ctx, request.NamespacedName, &edge); err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, err
@@ -83,7 +83,7 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	ctx = withKubeconfigInContext(ctx, kubeconfigSecret)
 
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: 15 * time.Second}, err
 	}
 
 	result, err := r.reconcileSecret(ctx, &edge)
@@ -95,7 +95,7 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 	return r.reconcileDeployment(ctx, &edge)
 }
 
-func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.KnativeEdge) (*corev1.Secret, error) {
+func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1alpha1.KnativeEdge) (*corev1.Secret, error) {
 	if edge == nil {
 		return nil, nil
 	}
@@ -166,7 +166,7 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 				o.SyncPeriod = &r.RemoteSyncPeriod
 				o.Scheme = r.Scheme
 				// // disable cache for reading from remote
-				// o.ClientDisableCacheFor = []client.Object{&edgev1.EdgeCluster{}}
+				// o.ClientDisableCacheFor = []client.Object{&edgev1alpha1.EdgeCluster{}}
 			})
 
 			if err != nil {
@@ -204,7 +204,7 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1.
 	return &kubeconfigSecret, nil
 }
 
-func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1.KnativeEdge) (ctrl.Result, error) {
+func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1alpha1.KnativeEdge) (ctrl.Result, error) {
 	if edge != nil {
 		r.Log.Info("Reconciling KnativeEdge secret.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
 	} else {
@@ -248,7 +248,6 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1.K
 		}
 	}
 
-	// FIXME: could try to compare the objects (e.g in case the controller image changes)
 	if !shouldCreate && !shouldDelete {
 		shouldUpdate =
 			secret.Annotations == nil ||
@@ -298,7 +297,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1.K
 	return ctrl.Result{}, nil
 }
 
-func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operatorv1.KnativeEdge) (ctrl.Result, error) {
+func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operatorv1alpha1.KnativeEdge) (ctrl.Result, error) {
 	if edge != nil {
 		r.Log.Info("Reconciling KnativeEdge deployment.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
 	} else {
@@ -311,7 +310,7 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 	shouldUpdate := false
 	shouldDelete := false
 
-	var edgeCluster edgev1.EdgeCluster
+	var edgeCluster edgev1alpha1.EdgeCluster
 
 	if edge == nil || edge.DeletionTimestamp != nil {
 		shouldDelete = true
@@ -426,7 +425,7 @@ func getDeploymentName(name, namespace string) types.NamespacedName {
 	return types.NamespacedName{Name: fmt.Sprintf("%s-controller", name), Namespace: namespace}
 }
 
-func (r *EdgeReconciler) buildSecret(namespacedName types.NamespacedName, edge *operatorv1.KnativeEdge, src, dst *corev1.Secret) {
+func (r *EdgeReconciler) buildSecret(namespacedName types.NamespacedName, edge *operatorv1alpha1.KnativeEdge, src, dst *corev1.Secret) {
 	if src == nil {
 		return
 	}
@@ -450,12 +449,11 @@ func (r *EdgeReconciler) buildSecret(namespacedName types.NamespacedName, edge *
 	controllerutil.SetControllerReference(edge, dst, r.Scheme)
 }
 
-func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName types.NamespacedName, edge *operatorv1.KnativeEdge, edgeCluster *edgev1.EdgeCluster, deployment *appsv1.Deployment) {
+func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName types.NamespacedName, edge *operatorv1alpha1.KnativeEdge, edgeCluster *edgev1alpha1.EdgeCluster, deployment *appsv1.Deployment) {
 	replicas := int32(1)
 	labels := getLabels(namespacedName)
 
 	proxyImage := r.ProxyImage
-
 	if edge.Spec.OverrideProxyImage != "" {
 		proxyImage = edge.Spec.OverrideProxyImage
 	}
@@ -516,11 +514,11 @@ func getLabels(namespacedName types.NamespacedName) map[string]string {
 	}
 }
 
-func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1.KnativeEdge, edgeCluster *edgev1.EdgeCluster, deployment *appsv1.Deployment) error {
-	edge.Status = operatorv1.KnativeEdgeStatus{
+func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1alpha1.KnativeEdge, edgeCluster *edgev1alpha1.EdgeCluster, deployment *appsv1.Deployment) error {
+	edge.Status = operatorv1alpha1.KnativeEdgeStatus{
 		Zone:                          edgeCluster.Spec.Zone,
 		Region:                        edgeCluster.Spec.Region,
-		Environments:                  edgeCluster.Spec.Environments,
+		Environments:                  strings.Join(edgeCluster.Spec.Environments, ","),
 		DeploymentObservedGeneration:  deployment.Generation,
 		EdgeObservedGeneration:        edge.Generation,
 		EdgeClusterObservedGeneration: edgeCluster.Generation,
@@ -550,14 +548,14 @@ func (r *EdgeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.remoteClusters = make(map[string]clusterWithExtras)
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&operatorv1.KnativeEdge{}).
+		For(&operatorv1alpha1.KnativeEdge{}).
 		Watches(
 			source.NewKindWithCache(&appsv1.Deployment{}, r.SystemCluster.GetCache()),
-			&handler.EnqueueRequestForOwner{OwnerType: &operatorv1.KnativeEdge{}, IsController: true},
+			&handler.EnqueueRequestForOwner{OwnerType: &operatorv1alpha1.KnativeEdge{}, IsController: true},
 		).
 		Watches(
 			source.NewKindWithCache(&corev1.Secret{}, r.SystemCluster.GetCache()),
-			&handler.EnqueueRequestForOwner{OwnerType: &operatorv1.KnativeEdge{}, IsController: true},
+			&handler.EnqueueRequestForOwner{OwnerType: &operatorv1alpha1.KnativeEdge{}, IsController: true},
 		).
 		Complete(r)
 }

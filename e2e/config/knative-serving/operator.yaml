@@ -19,8 +19,8 @@ metadata:
   namespace: default
   labels:
     app.kubernetes.io/component: webhook
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 # The data is populated at install time.
 
@@ -45,9 +45,9 @@ metadata:
   name: operator-webhook
   namespace: default
   labels:
-    operator.knative.dev/release: "v1.6.1"
+    operator.knative.dev/release: "v1.7.0"
     app.kubernetes.io/component: operator-webhook
-    app.kubernetes.io/version: "1.6.1"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/name: knative-operator
 spec:
   selector:
@@ -62,9 +62,9 @@ spec:
       labels:
         app: operator-webhook
         role: operator-webhook
-        operator.knative.dev/release: "v1.6.1"
+        operator.knative.dev/release: "v1.7.0"
         app.kubernetes.io/component: operator-webhook
-        app.kubernetes.io/version: "1.6.1"
+        app.kubernetes.io/version: "1.7.0"
         app.kubernetes.io/name: knative-operator
     spec:
       # To avoid node becoming SPOF, spread our replicas to different nodes.
@@ -82,7 +82,7 @@ spec:
         - name: operator-webhook
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: gcr.io/knative-releases/knative.dev/operator/cmd/webhook@sha256:30982f8c1e5ec21fece0b170c11a62e5488807ee910c463c2963df6c19e1f368
+          image: gcr.io/knative-releases/knative.dev/operator/cmd/webhook@sha256:472442273a004fd6bc79afdb80d9cf968e3d052faa1f6f51769899a8010b446b
           resources:
             requests:
               cpu: 100m
@@ -165,9 +165,9 @@ kind: Service
 metadata:
   labels:
     role: operator-webhook
-    operator.knative.dev/release: "v1.6.1"
+    operator.knative.dev/release: "v1.7.0"
     app.kubernetes.io/component: operator-webhook
-    app.kubernetes.io/version: "1.6.1"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/name: knative-operator
   name: operator-webhook
   namespace: default
@@ -206,8 +206,8 @@ kind: CustomResourceDefinition
 metadata:
   name: knativeeventings.operator.knative.dev
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 spec:
   group: operator.knative.dev
@@ -974,8 +974,8 @@ kind: CustomResourceDefinition
 metadata:
   name: knativeservings.operator.knative.dev
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 spec:
   group: operator.knative.dev
@@ -1811,8 +1811,8 @@ kind: ClusterRole
 metadata:
   name: knative-serving-operator-aggregated
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 aggregationRule:
   clusterRoleSelectors:
@@ -1828,8 +1828,8 @@ kind: ClusterRole
 metadata:
   name: knative-serving-operator-aggregated-stable
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 aggregationRule:
   clusterRoleSelectors:
@@ -1845,8 +1845,8 @@ kind: ClusterRole
 metadata:
   name: knative-eventing-operator-aggregated
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 aggregationRule:
   clusterRoleSelectors:
@@ -1862,8 +1862,8 @@ kind: ClusterRole
 metadata:
   name: knative-eventing-operator-aggregated-stable
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 aggregationRule:
   clusterRoleSelectors:
@@ -1894,8 +1894,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: knative-serving-operator
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 rules:
   - apiGroups:
@@ -2083,8 +2083,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: knative-eventing-operator
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 rules:
   - apiGroups:
@@ -2290,8 +2290,8 @@ metadata:
   name: knative-operator
   namespace: default
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 
 ---
@@ -2315,8 +2315,8 @@ kind: ClusterRoleBinding
 metadata:
   name: knative-serving-operator
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -2333,8 +2333,8 @@ kind: ClusterRoleBinding
 metadata:
   name: knative-eventing-operator
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -2367,7 +2367,7 @@ metadata:
   name: knative-operator-webhook
   labels:
     eventing.knative.dev/release: devel
-    app.kubernetes.io/version: "1.6.1"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 rules:
   # For manipulating certs into secrets.
@@ -2389,7 +2389,7 @@ metadata:
   name: knative-operator-webhook
   labels:
     eventing.knative.dev/release: devel
-    app.kubernetes.io/version: "1.6.1"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 rules:
   # For watching logging configuration and getting certs.
@@ -2480,8 +2480,8 @@ metadata:
   name: operator-webhook
   namespace: default
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 
 ---
@@ -2506,7 +2506,7 @@ metadata:
   name: operator-webhook
   labels:
     eventing.knative.dev/release: devel
-    app.kubernetes.io/version: "1.6.1"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 subjects:
   - kind: ServiceAccount
@@ -2522,8 +2522,8 @@ kind: ClusterRoleBinding
 metadata:
   name: operator-webhook
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -2554,8 +2554,8 @@ kind: ClusterRoleBinding
 metadata:
   name: knative-serving-operator-aggregated
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -2571,8 +2571,8 @@ kind: ClusterRoleBinding
 metadata:
   name: knative-serving-operator-aggregated-stable
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -2588,8 +2588,8 @@ kind: ClusterRoleBinding
 metadata:
   name: knative-eventing-operator-aggregated
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -2605,8 +2605,8 @@ kind: ClusterRoleBinding
 metadata:
   name: knative-eventing-operator-aggregated-stable
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -2638,8 +2638,8 @@ metadata:
   name: config-logging
   namespace: default
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 data:
   _example: |
@@ -2702,8 +2702,8 @@ metadata:
   name: config-observability
   namespace: default
   labels:
-    operator.knative.dev/release: "v1.6.1"
-    app.kubernetes.io/version: "1.6.1"
+    operator.knative.dev/release: "v1.7.0"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 data:
   _example: |
@@ -2806,9 +2806,9 @@ metadata:
   name: knative-operator
   namespace: default
   labels:
-    operator.knative.dev/release: "v1.6.1"
+    operator.knative.dev/release: "v1.7.0"
     app.kubernetes.io/name: knative-operator
-    app.kubernetes.io/version: "1.6.1"
+    app.kubernetes.io/version: "1.7.0"
     app.kubernetes.io/part-of: knative-operator
 spec:
   replicas: 1
@@ -2822,13 +2822,13 @@ spec:
       labels:
         name: knative-operator
         app.kubernetes.io/name: knative-operator
-        app.kubernetes.io/version: "1.6.1"
+        app.kubernetes.io/version: "1.7.0"
         app.kubernetes.io/part-of: knative-operator
     spec:
       serviceAccountName: knative-operator
       containers:
         - name: knative-operator
-          image: gcr.io/knative-releases/knative.dev/operator/cmd/operator@sha256:23a267df4c11033fbb862192d713cd0ec46f50cda2a57eb261fff91e9039236b
+          image: gcr.io/knative-releases/knative.dev/operator/cmd/operator@sha256:f350ea6fc45495670bf1ce0b57218cc599d8c68214cbc2a8094cfda0dcaa0b3b
           imagePullPolicy: IfNotPresent
           env:
             - name: POD_NAME

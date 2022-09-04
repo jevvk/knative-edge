@@ -1,0 +1,5 @@
+
+resources:
+- edge.jevv.dev_edgeclusters.yaml
+- operator.edge.jevv.dev_knativeedges.yaml
+#+kubebuilder:scaffold:crdkustomizeresource

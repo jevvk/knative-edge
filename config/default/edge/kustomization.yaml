@@ -1,10 +1,8 @@
 resources:
-- ../../crd
 - namespace.yaml
-- ../../rbac/controller/edge
+- ../../crd/overlays/edge
+- ../../rbac/controller
 - ../../rbac/operator
-- ../../rbac/bases/auth_proxy
-- ../../rbac/bases/leader_election
 - operator.yaml
 
 generatorOptions:
@@ -15,6 +13,3 @@ configMapGenerator:
   namespace: default
   files:
   - config.yaml
-
-patchesStrategicMerge:
-- role_bindings.yaml

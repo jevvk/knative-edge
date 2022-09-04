@@ -1,12 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: knative-edge-reflector-edgeclusters-viewer-rolebinding
+  name: knative-edge-reflector-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: knative-edge-edgecluster-viewer-role
+  name: knative-edge-reflector-role
 subjects:
 - kind: ServiceAccount
   name: knative-edge-reflector
-  namespace: knative-edge-system
+  namespace: default

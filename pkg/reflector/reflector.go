@@ -8,7 +8,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
-	"edge.jevv.dev/pkg/controllers"
 	edgecontrolers "edge.jevv.dev/pkg/controllers/edge"
 )
 
@@ -39,21 +38,6 @@ func New(envs []string, scheme *runtime.Scheme) Reflector {
 		corev1Reconciler:           corev1Reconciler,
 		knativeServingv1Reconciler: knativeServingv1Reconciler,
 	}
-}
-
-func (r *Reflector) GetReconcilers() []controllers.EdgeReconciler {
-	corev1Reconcilers := r.corev1Reconciler.GetInnerReconcilers()
-	knativeServingv1Reconcilers := r.knativeServingv1Reconciler.GetInnerReconcilers()
-
-	size := len(corev1Reconcilers) + len(knativeServingv1Reconcilers)
-
-	reconcilers := make([]controllers.EdgeReconciler, size)
-
-	var i int = 0
-	i += copy(reconcilers[i:], corev1Reconcilers)
-	i += copy(reconcilers[i:], knativeServingv1Reconcilers)
-
-	return reconcilers
 }
 
 func (r *Reflector) SetupWithManager(mgr ctrl.Manager) error {

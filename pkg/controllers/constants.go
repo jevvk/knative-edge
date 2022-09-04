@@ -24,4 +24,6 @@ const (
 
 const (
 	ObserverGenerationAnnotation = "edge.jevv.dev/observed-generation"
+	ProxyImageAnnotation         = "edge.jevv.dev/proxy-image"
+	ControllerImageAnnotation    = "edge.jevv.dev/controller-image"
 )

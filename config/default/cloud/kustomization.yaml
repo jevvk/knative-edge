@@ -1,6 +1,7 @@
 resources:
-- ../../crd
-- namespace.yaml
-- ../../rbac/bases/edgeclusters
-- ../../rbac/controller/cloud
-- role_bindings.yaml
+- ../../crd/overlays/cloud
+- ../../rbac/reflector
+- ../../rbac/edgeclusters
+
+generatorOptions:
+  disableNameSuffixHash: true

@@ -59,9 +59,9 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 
 	@test ! -f config/rbac/role.yaml || rm config/rbac/role.yaml
 
-	@mkdir -p config/rbac/controller/edge
+	@mkdir -p config/rbac/controller
 	@$(CONTROLLER_GEN) rbac:roleName=knative-edge-controller-role crd webhook paths="./pkg/controllers/edge/..." output:crd:artifacts:config=config/crd/bases
-	@test ! -f config/rbac/role.yaml || mv config/rbac/role.yaml config/rbac/controller/edge/role.yaml
+	@test ! -f config/rbac/role.yaml || mv config/rbac/role.yaml config/rbac/controller/role.yaml
 
 	@mkdir -p config/rbac/operator
 	@$(CONTROLLER_GEN) rbac:roleName=knative-edge-operator-role crd webhook paths="./pkg/controllers/operator/..." output:crd:artifacts:config=config/crd/bases

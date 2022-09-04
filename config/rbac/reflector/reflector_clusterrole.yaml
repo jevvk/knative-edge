@@ -39,3 +39,11 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - edge.jevv.dev
+  resources:
+  - edgeclusters
+  verbs:
+  - get
+  - list
+  - watch

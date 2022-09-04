@@ -1,0 +1,4 @@
+bases:
+- ../../bases
+patchesStrategicMerge:
+- drop_crds.yaml

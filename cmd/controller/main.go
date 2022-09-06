@@ -31,6 +31,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -39,9 +40,7 @@ import (
 
 	//+kubebuilder:scaffold:imports
 
-	edgecontrollers "edge.jevv.dev/pkg/controllers/edge"
-	"edge.jevv.dev/pkg/controllers/edge/computeoffload"
-	"edge.jevv.dev/pkg/reflector"
+	"edge.jevv.dev/pkg/controllers/edge"
 )
 
 var (
@@ -88,7 +87,7 @@ func main() {
 		LeaderElection:                true,
 		LeaderElectionID:              "ad6e1dd9.edge.jevv.dev",
 		LeaderElectionReleaseOnCancel: true,
-		NewCache:                      edgecontrollers.ManagedScopedCache,
+		NewCache:                      edge.ManagedScopedCache,
 	})
 
 	if err != nil {
@@ -96,20 +95,64 @@ func main() {
 		os.Exit(1)
 	}
 
-	reflector := reflector.New(strings.Split(environments, ","), scheme)
+	envs := strings.Split(environments, ",")
 
-	if err := reflector.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Unable to setup reflector.")
+	cluster := edge.NewRemoteClusterOrDie(func(opts *cluster.Options) {
+		opts.NewCache = edge.EnvScopedCache(envs)
+		opts.Scheme = scheme
+	})
+
+	if err = (&edge.NamespaceReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Log:           mgr.GetLogger().WithName("namespace-controller"),
+		Recorder:      mgr.GetEventRecorderFor("namespace-controller"),
+		RemoteCluster: cluster,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Unable to create controller.", "controller", "namespace")
 		os.Exit(1)
 	}
 
-	offloader := computeoffload.New(proxyImage)
-
-	if err := offloader.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Unable to setup compute offloader.")
+	if err = (&edge.SecretReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Log:           mgr.GetLogger().WithName("secret-controller"),
+		Recorder:      mgr.GetEventRecorderFor("secret-controller"),
+		RemoteCluster: cluster,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Unable to create controller.", "controller", "secret")
 		os.Exit(1)
 	}
 
+	if err = (&edge.ConfigMapReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Log:           mgr.GetLogger().WithName("configmap-controller"),
+		Recorder:      mgr.GetEventRecorderFor("configmap-controller"),
+		RemoteCluster: cluster,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Unable to create controller.", "controller", "configmap")
+		os.Exit(1)
+	}
+
+	if err = (&edge.KServiceReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Log:           mgr.GetLogger().WithName("kservice-controller"),
+		Recorder:      mgr.GetEventRecorderFor("kservice-controller"),
+		RemoteCluster: cluster,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Unable to create controller.", "controller", "kservice")
+		os.Exit(1)
+	}
+
+	if err = (&edge.KRevisionReconciler{
+		Client:     mgr.GetClient(),
+		ProxyImage: proxyImage,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Unable to create controller.", "controller", "krevision")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

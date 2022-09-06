@@ -27,7 +27,6 @@ import (
 
 type KRevisionReconciler struct {
 	client.Client
-	controllers.EdgeReconciler
 
 	ProxyImage string
 }

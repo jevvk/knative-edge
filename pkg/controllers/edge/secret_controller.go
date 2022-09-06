@@ -59,9 +59,6 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 }
 
 func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Log = mgr.GetLogger().WithName("secret-controller")
-	r.Recorder = mgr.GetEventRecorderFor("secret-controller")
-
 	r.mirror = &MirroringReconciler[*corev1.Secret]{
 		Log:           r.Log.WithName("mirror"),
 		Scheme:        r.Scheme,

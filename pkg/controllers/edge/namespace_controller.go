@@ -57,9 +57,6 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Log = mgr.GetLogger().WithName("namespace-controller")
-	r.Recorder = mgr.GetEventRecorderFor("namespace-controller")
-
 	r.mirror = &MirroringReconciler[*corev1.Namespace]{
 		Log:           r.Log.WithName("mirror"),
 		Scheme:        r.Scheme,

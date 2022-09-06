@@ -9,9 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"edge.jevv.dev/pkg/controllers"
-	"knative.dev/pkg/kmeta"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,6 +48,7 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 
 	if shouldCreate {
 		revision = r.buildRevision(revisionNamespacedName, service)
+		controllerutil.SetControllerReference(service, revision, r.Scheme)
 
 		if err := r.Create(ctx, revision); err != nil {
 			if apierrors.IsConflict(err) {
@@ -58,7 +59,7 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 		}
 	} else if shouldUpdate {
 		newRevision := r.buildRevision(revisionNamespacedName, service)
-
+		controllerutil.SetControllerReference(service, revision, r.Scheme)
 		controllers.UpdateLastGenerationAnnotation(revision, newRevision)
 
 		if err := r.Update(ctx, newRevision); err != nil {
@@ -81,12 +82,11 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 	return ctrl.Result{}, nil
 }
 
-func (r *KServiceReconciler) buildRevision(namespacedName types.NamespacedName, owner *servingv1.Service) *servingv1.Revision {
+func (r *KServiceReconciler) buildRevision(namespacedName types.NamespacedName, service *servingv1.Service) *servingv1.Revision {
 	return &servingv1.Revision{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            namespacedName.Name,
-			Namespace:       namespacedName.Namespace,
-			OwnerReferences: []metav1.OwnerReference{*kmeta.NewControllerRef(owner)},
+			Name:      namespacedName.Name,
+			Namespace: namespacedName.Namespace,
 			Labels: map[string]string{
 				controllers.ManagedLabel:   "true",
 				controllers.EdgeLocalLabel: "true",

@@ -22,6 +22,7 @@ import (
 )
 
 //+kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=serving.knative.dev,resources=revisions,verbs=get;list;watch;create;update;patch;delete
 
 type KServiceReconciler struct {
 	client.Client

@@ -27,7 +27,6 @@ type kindPreProcessor[T client.Object] func(ctx context.Context, kind T) (ctrl.R
 
 type MirroringReconciler[T client.Object] struct {
 	client.Client
-	controllers.EdgeReconciler
 
 	Log           logr.Logger
 	Scheme        *runtime.Scheme

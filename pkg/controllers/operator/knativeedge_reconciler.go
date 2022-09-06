@@ -22,10 +22,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"edge.jevv.dev/pkg/controllers"
+	edgecontrollers "edge.jevv.dev/pkg/controllers/edge"
+
 	edgev1alpha1 "edge.jevv.dev/pkg/apis/edge/v1alpha1"
 	operatorv1alpha1 "edge.jevv.dev/pkg/apis/operator/v1alpha1"
-	"edge.jevv.dev/pkg/controllers"
-	"edge.jevv.dev/pkg/reflector"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -505,7 +506,7 @@ func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName ty
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "edgeconfig",
-								MountPath: reflector.ConfigPath,
+								MountPath: edgecontrollers.ConfigPath,
 								ReadOnly:  true,
 							},
 						},
@@ -549,6 +550,10 @@ func (r *EdgeReconciler) updateEdgeStatus(ctx context.Context, edge *operatorv1a
 
 	return r.Status().Update(ctx, edge)
 }
+
+// func (r *EdgeReconciler) setEdgeCondition(ctx context.Context, edge *operatorv1alpha1.KnativeEdge) error {
+
+// }
 
 func (r *EdgeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	var err error

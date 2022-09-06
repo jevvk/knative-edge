@@ -36,6 +36,8 @@ type MirroringReconciler[T client.Object] struct {
 	KindGenerator     kindGenerator[T]
 	KindMerger        kindMerger[T]
 	KindPreProcessors *[]kindPreProcessor[T]
+
+	Envs []string
 }
 
 func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -43,6 +45,11 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 
 	if r.Client == nil {
 		r.Log.Info("nil client")
+		return ctrl.Result{}, nil
+	}
+
+	if r.RemoteCluster.GetClient() == nil {
+		r.Log.Info("nil remote client")
 		return ctrl.Result{}, nil
 	}
 
@@ -66,6 +73,9 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		} else {
 			return ctrl.Result{}, err
 		}
+	} else if IsManagedObject(localKind) && !HasEdgeSyncLabel(remoteKind, r.Envs) {
+		// delete is edge sync label no longer valid (e.g. if envs change)
+		shouldDelete = true
 	}
 
 	if !shouldDelete {
@@ -93,14 +103,14 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			controllers.UpdateLabels(localKind)
 			kindAnnotations[controllers.LastRemoteGenerationAnnotation] = remoteGeneration
 		}
-	}
 
-	if r.KindPreProcessors != nil {
-		for _, preprocessor := range *r.KindPreProcessors {
-			res, err := preprocessor(ctx, localKind)
+		if r.KindPreProcessors != nil {
+			for _, preprocessor := range *r.KindPreProcessors {
+				res, err := preprocessor(ctx, localKind)
 
-			if err != nil || res.Requeue || res.RequeueAfter > 0 {
-				return res, err
+				if err != nil || res.Requeue || res.RequeueAfter > 0 {
+					return res, err
+				}
 			}
 		}
 	}
@@ -134,7 +144,9 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	return ctrl.Result{}, nil
 }
 
-func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager) *builder.Builder {
+func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager, predicates ...predicate.Predicate) *builder.Builder {
+	predicates = append(predicates, predicate.ResourceVersionChangedPredicate{})
+
 	return ctrl.NewControllerManagedBy(mgr).
 		// local watch
 		For(
@@ -142,7 +154,7 @@ func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager) *build
 			builder.WithPredicates(
 				predicate.And(
 					predicate.GenerationChangedPredicate{},
-					controllers.NotChangedByEdgeControllers{},
+					NotChangedByEdgeControllers{},
 				),
 			),
 		).
@@ -150,6 +162,8 @@ func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager) *build
 		Watches(
 			source.NewKindWithCache(r.KindGenerator(), r.RemoteCluster.GetCache()),
 			&handler.EnqueueRequestForObject{},
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+			builder.WithPredicates(
+				predicate.And(predicates...),
+			),
 		)
 }

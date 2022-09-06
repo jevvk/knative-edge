@@ -11,6 +11,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,6 +26,7 @@ type NamespaceReconciler struct {
 	Scheme        *runtime.Scheme
 	Recorder      record.EventRecorder
 	RemoteCluster cluster.Cluster
+	Envs          []string
 
 	mirror *MirroringReconciler[*corev1.Namespace]
 }
@@ -56,17 +58,18 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return r.mirror.Reconcile(ctx, req)
 }
 
-func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...predicate.Predicate) error {
 	r.mirror = &MirroringReconciler[*corev1.Namespace]{
 		Log:           r.Log.WithName("mirror"),
 		Client:        r.Client,
 		Scheme:        r.Scheme,
 		Recorder:      r.Recorder,
 		RemoteCluster: r.RemoteCluster,
+		Envs:          r.Envs,
 		KindGenerator: r.kindGenerator,
 		KindMerger:    r.kindMerger,
 	}
 
-	return r.mirror.NewControllerManagedBy(mgr).
+	return r.mirror.NewControllerManagedBy(mgr, predicates...).
 		Complete(r)
 }

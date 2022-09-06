@@ -99,6 +99,7 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.mirror = &MirroringReconciler[*servingv1.Service]{
 		Log:               r.Log.WithName("mirror"),
+		Client:            r.Client,
 		Scheme:            r.Scheme,
 		Recorder:          r.Recorder,
 		RemoteCluster:     r.RemoteCluster,

@@ -61,6 +61,7 @@ func (r *ConfigMapReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *ConfigMapReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.mirror = &MirroringReconciler[*corev1.ConfigMap]{
 		Log:           r.Log.WithName("mirror"),
+		Client:        r.Client,
 		Scheme:        r.Scheme,
 		Recorder:      r.Recorder,
 		RemoteCluster: r.RemoteCluster,

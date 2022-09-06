@@ -59,6 +59,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.mirror = &MirroringReconciler[*corev1.Namespace]{
 		Log:           r.Log.WithName("mirror"),
+		Client:        r.Client,
 		Scheme:        r.Scheme,
 		Recorder:      r.Recorder,
 		RemoteCluster: r.RemoteCluster,

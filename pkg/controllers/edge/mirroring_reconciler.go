@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -25,7 +24,7 @@ import (
 type kindGenerator[T client.Object] func() T
 type kindMerger[T client.Object] func(src, dst T) error
 
-type mirroringReconciler[T client.Object] struct {
+type MirroringReconciler[T client.Object] struct {
 	client.Client
 	controllers.EdgeReconciler
 
@@ -34,25 +33,13 @@ type mirroringReconciler[T client.Object] struct {
 	Recorder      record.EventRecorder
 	RemoteCluster cluster.Cluster
 
-	Name          string
-	HealthzName   string
 	KindGenerator kindGenerator[T]
 	KindMerger    kindMerger[T]
 }
 
-func (r *mirroringReconciler[T]) GetName() string {
-	return r.Name
-}
+func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	r.Log.Info("Started reconciling remote and local cluster.", "resource", req.NamespacedName.String())
 
-func (r *mirroringReconciler[T]) GetHealthz() healthz.Checker {
-	return nil
-}
-
-func (r *mirroringReconciler[T]) GetHealthzName() string {
-	return r.HealthzName
-}
-
-func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	localKind, remoteKind := r.KindGenerator(), r.KindGenerator()
 
 	shouldCreate := false
@@ -131,10 +118,7 @@ func (r *mirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	return ctrl.Result{}, nil
 }
 
-func (r *mirroringReconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
-	r.Log = mgr.GetLogger().WithName("controller").WithName(r.Name)
-	r.Log.Info("Setting up controller.", "controller", r.Name)
-
+func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager) *builder.Builder {
 	return ctrl.NewControllerManagedBy(mgr).
 		// local watch
 		For(
@@ -151,6 +135,5 @@ func (r *mirroringReconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 			source.NewKindWithCache(r.KindGenerator(), r.RemoteCluster.GetCache()),
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
-		).
-		Complete(r)
+		)
 }

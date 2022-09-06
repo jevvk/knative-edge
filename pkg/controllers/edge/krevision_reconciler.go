@@ -4,76 +4,33 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"edge.jevv.dev/pkg/controllers"
+	"knative.dev/pkg/kmeta"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/kmeta"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
-
-	"edge.jevv.dev/pkg/controllers"
 )
 
-//+kubebuilder:rbac:groups=serving.knative.dev,resources=revisions,verbs=get;list;watch;create;update;patch;delete
-
-type KRevisionReconciler struct {
-	client.Client
-
-	ProxyImage string
-}
-
-func (r *KRevisionReconciler) GetName() string {
-	return "KnativeEdgeV1/ComputeOffload/KRevision"
-}
-
-func (r *KRevisionReconciler) GetHealthz() healthz.Checker {
-	return nil
-}
-
-func (r *KRevisionReconciler) GetHealthzName() string {
-	return "healthz-knative-edge-compute-offload-krevision"
-}
-
-func kServiceHasAnnotation(service *servingv1.Service) bool {
+func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *servingv1.Service) (ctrl.Result, error) {
 	if service == nil {
-		return false
-	}
-
-	if annotations := service.GetAnnotations(); annotations != nil {
-		value, exists := annotations[controllers.OffloadToRemoteAnnotation]
-
-		return exists && strings.ToLower(value) == "true"
-	}
-
-	return false
-}
-
-func (r *KRevisionReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-	var service servingv1.Service
-
-	if err := r.Get(ctx, request.NamespacedName, &service); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
-
 		return ctrl.Result{}, nil
 	}
 
-	var shouldCreate = false
-	var shouldUpdate = false
-	var shouldDelete = false
+	shouldCreate := false
+	shouldUpdate := false
+	shouldDelete := false
+
 	var revision *servingv1.Revision
 
-	revisionNamespacedName := getRevisionNamespacedName(request.NamespacedName)
+	serviceNamespacedName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
+	revisionNamespacedName := getRevisionNamespacedName(serviceNamespacedName)
 
 	if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -83,14 +40,14 @@ func (r *KRevisionReconciler) Reconcile(ctx context.Context, request ctrl.Reques
 		shouldCreate = true
 	}
 
-	if !shouldCreate && !kServiceHasAnnotation(&service) {
+	if !shouldCreate && !kServiceHasAnnotation(service) {
 		shouldDelete = true
 	}
 
 	// TODO: check if we should update
 
 	if shouldCreate {
-		revision = r.buildRevision(revisionNamespacedName, &service)
+		revision = r.buildRevision(revisionNamespacedName, service)
 
 		if err := r.Create(ctx, revision); err != nil {
 			if apierrors.IsConflict(err) {
@@ -100,7 +57,7 @@ func (r *KRevisionReconciler) Reconcile(ctx context.Context, request ctrl.Reques
 			return ctrl.Result{}, err
 		}
 	} else if shouldUpdate {
-		newRevision := r.buildRevision(revisionNamespacedName, &service)
+		newRevision := r.buildRevision(revisionNamespacedName, service)
 
 		controllers.UpdateLastGenerationAnnotation(revision, newRevision)
 
@@ -124,7 +81,7 @@ func (r *KRevisionReconciler) Reconcile(ctx context.Context, request ctrl.Reques
 	return ctrl.Result{}, nil
 }
 
-func (r *KRevisionReconciler) buildRevision(namespacedName types.NamespacedName, owner *servingv1.Service) *servingv1.Revision {
+func (r *KServiceReconciler) buildRevision(namespacedName types.NamespacedName, owner *servingv1.Service) *servingv1.Revision {
 	return &servingv1.Revision{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            namespacedName.Name,
@@ -158,13 +115,4 @@ func (r *KRevisionReconciler) buildRevision(namespacedName types.NamespacedName,
 			},
 		},
 	}
-}
-
-func (r *KRevisionReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(
-			&servingv1.Service{},
-			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
-		).
-		Complete(r)
 }

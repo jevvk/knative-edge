@@ -23,7 +23,7 @@ import (
 
 type kindGenerator[T client.Object] func() T
 type kindMerger[T client.Object] func(src, dst T) error
-type kindPreProcessor[T client.Object] func(ctx context.Context, kind T) error
+type kindPreProcessor[T client.Object] func(ctx context.Context, kind T) (ctrl.Result, error)
 
 type MirroringReconciler[T client.Object] struct {
 	client.Client
@@ -34,9 +34,9 @@ type MirroringReconciler[T client.Object] struct {
 	Recorder      record.EventRecorder
 	RemoteCluster cluster.Cluster
 
-	KindGenerator    kindGenerator[T]
-	KindMerger       kindMerger[T]
-	KindPreProcessor kindPreProcessor[T]
+	KindGenerator     kindGenerator[T]
+	KindMerger        kindMerger[T]
+	KindPreProcessors *[]kindPreProcessor[T]
 }
 
 func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -96,9 +96,13 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
-	if r.KindPreProcessor != nil {
-		if err := r.KindPreProcessor(ctx, localKind); err != nil {
-			return ctrl.Result{}, err
+	if r.KindPreProcessors != nil {
+		for _, preprocessor := range *r.KindPreProcessors {
+			res, err := preprocessor(ctx, localKind)
+
+			if err != nil || res.Requeue || res.RequeueAfter > 0 {
+				return res, err
+			}
 		}
 	}
 

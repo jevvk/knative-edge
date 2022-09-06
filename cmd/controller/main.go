@@ -141,16 +141,9 @@ func main() {
 		Log:           mgr.GetLogger().WithName("kservice-controller"),
 		Recorder:      mgr.GetEventRecorderFor("kservice-controller"),
 		RemoteCluster: cluster,
+		ProxyImage:    proxyImage,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Unable to create controller.", "controller", "kservice")
-		os.Exit(1)
-	}
-
-	if err = (&edge.KRevisionReconciler{
-		Client:     mgr.GetClient(),
-		ProxyImage: proxyImage,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "Unable to create controller.", "controller", "krevision")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

@@ -11,7 +11,14 @@ import (
 )
 
 func EnvScopedCache(envs []string) cache.NewCacheFunc {
-	selector, err := klabels.Parse(fmt.Sprintf("%s in (%s)", controllers.EnvironmentLabel, strings.Join(envs, ",")))
+	var err error
+	var selector klabels.Selector
+
+	if len(envs) == 0 {
+		selector, err = klabels.Parse(controllers.EnvironmentLabel)
+	} else {
+		selector, err = klabels.Parse(fmt.Sprintf("%s in (%s)", controllers.EnvironmentLabel, strings.Join(envs, ",")))
+	}
 
 	if err != nil {
 		panic(fmt.Errorf("couldn't create label selector: %w", err))

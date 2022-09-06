@@ -23,6 +23,7 @@ import (
 
 type kindGenerator[T client.Object] func() T
 type kindMerger[T client.Object] func(src, dst T) error
+type kindPreProcessor[T client.Object] func(ctx context.Context, kind T) error
 
 type MirroringReconciler[T client.Object] struct {
 	client.Client
@@ -33,12 +34,18 @@ type MirroringReconciler[T client.Object] struct {
 	Recorder      record.EventRecorder
 	RemoteCluster cluster.Cluster
 
-	KindGenerator kindGenerator[T]
-	KindMerger    kindMerger[T]
+	KindGenerator    kindGenerator[T]
+	KindMerger       kindMerger[T]
+	KindPreProcessor kindPreProcessor[T]
 }
 
 func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Log.Info("Started reconciling remote and local cluster.", "resource", req.NamespacedName.String())
+
+	if r.Client == nil {
+		r.Log.Info("nil client")
+		return ctrl.Result{}, nil
+	}
 
 	localKind, remoteKind := r.KindGenerator(), r.KindGenerator()
 
@@ -86,6 +93,12 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 
 			controllers.UpdateLabels(localKind)
 			kindAnnotations[controllers.LastRemoteGenerationAnnotation] = remoteGeneration
+		}
+	}
+
+	if r.KindPreProcessor != nil {
+		if err := r.KindPreProcessor(ctx, localKind); err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 

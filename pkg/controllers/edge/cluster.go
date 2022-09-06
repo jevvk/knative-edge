@@ -1,4 +1,4 @@
-package reflector
+package edge
 
 import (
 	"fmt"

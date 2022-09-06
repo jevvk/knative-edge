@@ -1,4 +1,4 @@
-package computeoffload
+package edge
 
 import (
 	"fmt"

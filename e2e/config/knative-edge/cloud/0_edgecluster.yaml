@@ -1,4 +1,4 @@
-apiVersion: edge.jevv.dev/v1
+apiVersion: edge.jevv.dev/v1alpha1
 kind: EdgeCluster
 metadata:
   name: e2e-edge

@@ -1,4 +1,4 @@
-apiVersion: operator.edge.jevv.dev/v1
+apiVersion: operator.edge.jevv.dev/v1alpha1
 kind: OperatorConfig
 syncPeriod: 30s
 operatorOptions:

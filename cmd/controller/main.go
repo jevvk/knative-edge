@@ -102,6 +102,11 @@ func main() {
 		opts.Scheme = scheme
 	})
 
+	if err = mgr.Add(cluster); err != nil {
+		setupLog.Error(err, "Unable to setup remote cluster.")
+		os.Exit(1)
+	}
+
 	if err = (&edge.NamespaceReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),

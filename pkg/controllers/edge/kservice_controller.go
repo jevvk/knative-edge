@@ -13,8 +13,10 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"edge.jevv.dev/pkg/controllers"
 
@@ -189,9 +191,6 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Log = mgr.GetLogger().WithName("namespace-controller")
-	r.Recorder = mgr.GetEventRecorderFor("namespace-controller")
-
 	r.mirror = &MirroringReconciler[*servingv1.Service]{
 		Log:              r.Log.WithName("mirror"),
 		Scheme:           r.Scheme,
@@ -203,5 +202,13 @@ func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return r.mirror.NewControllerManagedBy(mgr).
+		Owns(
+			&servingv1.Revision{},
+			builder.WithPredicates(
+				predicate.And(
+					predicate.GenerationChangedPredicate{},
+					predicate.NewPredicateFuncs(isComputeOffloadRevision)),
+			),
+		).
 		Complete(r)
 }

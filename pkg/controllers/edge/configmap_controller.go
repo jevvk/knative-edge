@@ -59,9 +59,6 @@ func (r *ConfigMapReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func (r *ConfigMapReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Log = mgr.GetLogger().WithName("configmap-controller")
-	r.Recorder = mgr.GetEventRecorderFor("configmap-controller")
-
 	r.mirror = &MirroringReconciler[*corev1.ConfigMap]{
 		Log:           r.Log.WithName("mirror"),
 		Scheme:        r.Scheme,

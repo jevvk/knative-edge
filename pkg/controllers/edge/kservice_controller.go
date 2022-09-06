@@ -33,6 +33,7 @@ type KServiceReconciler struct {
 	RemoteCluster cluster.Cluster
 
 	ProxyImage string
+	Envs       []string
 
 	mirror *MirroringReconciler[*servingv1.Service]
 }
@@ -97,19 +98,20 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return r.mirror.Reconcile(ctx, req)
 }
 
-func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...predicate.Predicate) error {
 	r.mirror = &MirroringReconciler[*servingv1.Service]{
 		Log:               r.Log.WithName("mirror"),
 		Client:            r.Client,
 		Scheme:            r.Scheme,
 		Recorder:          r.Recorder,
 		RemoteCluster:     r.RemoteCluster,
+		Envs:              r.Envs,
 		KindGenerator:     r.kindGenerator,
 		KindMerger:        r.kindMerger,
 		KindPreProcessors: &[]kindPreProcessor[*servingv1.Service]{r.reconcileKRevision, r.reconcileKService},
 	}
 
-	return r.mirror.NewControllerManagedBy(mgr).
+	return r.mirror.NewControllerManagedBy(mgr, predicates...).
 		Owns(
 			&servingv1.Revision{},
 			builder.WithPredicates(

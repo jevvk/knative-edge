@@ -107,13 +107,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	hasEdgeLabelPredicate := edge.HasEdgeSyncLabelPredicate(envs)
+
 	if err = (&edge.NamespaceReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		Log:           mgr.GetLogger().WithName("namespace-controller"),
 		Recorder:      mgr.GetEventRecorderFor("namespace-controller"),
 		RemoteCluster: cluster,
-	}).SetupWithManager(mgr); err != nil {
+		Envs:          envs,
+	}).SetupWithManager(mgr, hasEdgeLabelPredicate); err != nil {
 		setupLog.Error(err, "Unable to create controller.", "controller", "namespace")
 		os.Exit(1)
 	}
@@ -124,7 +127,8 @@ func main() {
 		Log:           mgr.GetLogger().WithName("secret-controller"),
 		Recorder:      mgr.GetEventRecorderFor("secret-controller"),
 		RemoteCluster: cluster,
-	}).SetupWithManager(mgr); err != nil {
+		Envs:          envs,
+	}).SetupWithManager(mgr, hasEdgeLabelPredicate); err != nil {
 		setupLog.Error(err, "Unable to create controller.", "controller", "secret")
 		os.Exit(1)
 	}
@@ -135,7 +139,8 @@ func main() {
 		Log:           mgr.GetLogger().WithName("configmap-controller"),
 		Recorder:      mgr.GetEventRecorderFor("configmap-controller"),
 		RemoteCluster: cluster,
-	}).SetupWithManager(mgr); err != nil {
+		Envs:          envs,
+	}).SetupWithManager(mgr, hasEdgeLabelPredicate); err != nil {
 		setupLog.Error(err, "Unable to create controller.", "controller", "configmap")
 		os.Exit(1)
 	}
@@ -147,7 +152,8 @@ func main() {
 		Recorder:      mgr.GetEventRecorderFor("kservice-controller"),
 		RemoteCluster: cluster,
 		ProxyImage:    proxyImage,
-	}).SetupWithManager(mgr); err != nil {
+		Envs:          envs,
+	}).SetupWithManager(mgr, hasEdgeLabelPredicate); err != nil {
 		setupLog.Error(err, "Unable to create controller.", "controller", "kservice")
 		os.Exit(1)
 	}

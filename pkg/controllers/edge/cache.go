@@ -2,23 +2,40 @@ package edge
 
 import (
 	"fmt"
-	"strings"
 
 	klabels "k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"edge.jevv.dev/pkg/controllers"
 )
 
 func EnvScopedCache(envs []string) cache.NewCacheFunc {
-	var err error
-	var selector klabels.Selector
+	var labelSelector metav1.LabelSelector
 
 	if len(envs) == 0 {
-		selector, err = klabels.Parse(controllers.EnvironmentLabel)
+		labelSelector = metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      controllers.EnvironmentLabel,
+					Operator: metav1.LabelSelectorOpExists,
+				},
+			},
+		}
 	} else {
-		selector, err = klabels.Parse(fmt.Sprintf("%s in (%s)", controllers.EnvironmentLabel, strings.Join(envs, ",")))
+		labelSelector = metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      controllers.EnvironmentLabel,
+					Operator: metav1.LabelSelectorOpIn,
+					Values:   envs,
+				},
+			},
+		}
 	}
+
+	selector, err := metav1.LabelSelectorAsSelector(&labelSelector)
 
 	if err != nil {
 		panic(fmt.Errorf("couldn't create label selector: %w", err))

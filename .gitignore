@@ -27,3 +27,6 @@ testbin/*
 # vscode settings
 .vscode/
 !.vscode/settings.json
+
+# e2e
+e2e/tmp

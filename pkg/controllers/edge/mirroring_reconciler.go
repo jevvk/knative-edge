@@ -152,10 +152,8 @@ func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager, predic
 		For(
 			r.KindGenerator(),
 			builder.WithPredicates(
-				predicate.And(
-					predicate.GenerationChangedPredicate{},
-					NotChangedByEdgeControllers{},
-				),
+				predicate.GenerationChangedPredicate{},
+				NotChangedByEdgeControllers{},
 			),
 		).
 		// remote watch
@@ -163,7 +161,7 @@ func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager, predic
 			source.NewKindWithCache(r.KindGenerator(), r.RemoteCluster.GetCache()),
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(
-				predicate.And(predicates...),
+				predicates...,
 			),
 		)
 }

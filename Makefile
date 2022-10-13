@@ -5,7 +5,7 @@ PKG ?= ${BASE_CMD}/controller
 IMG ?= ko://${PKG}
 REPO ?= kind.local
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.24.0
+ENVTEST_K8S_VERSION = 1.25.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -94,7 +94,7 @@ e2e-test: manifests generate fmt vet envtest kustomize ## Run e2e tests.
 	@echo "It is likely you need to increase the inotify limit."
 	@echo ""
 
-	DEBUG_LOG=0 ENVTEST_K8S_VERSION=$(ENVTEST_K8S_VERSION) KUSTOMIZE=$(KUSTOMIZE) bash e2e/scripts/run-e2e.sh
+	DEBUG_LOG=0 ENVTEST_K8S_VERSION=$(ENVTEST_K8S_VERSION) KUSTOMIZE=$(KUSTOMIZE) REPO=$(REPO) bash e2e/scripts/run-e2e.sh
 
 ##@ Build
 

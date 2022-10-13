@@ -42,10 +42,10 @@ KUBECONFIG=$TMP/kubeconfig-edge kubectl wait -n knative-serving KnativeServing k
 echo ""
 echo "Deploying Knative Edge..."
 
-$KUSTOMIZE build config/default/cloud | KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-cloud ko resolve -f - | KUBECONFIG=$TMP/kubeconfig-cloud kubectl apply -f -
+$KUSTOMIZE build config/default/cloud | KO_DOCKER_REPO=$REPO KIND_CLUSTER_NAME=knative-edge-e2e-cloud ko resolve --platform linux/amd64,linux/arm64,linux/arm -f - | KUBECONFIG=$TMP/kubeconfig-cloud kubectl apply -f -
 KUBECONFIG=$TMP/kubeconfig-cloud kubectl apply -f e2e/config/knative-edge/cloud
 
-$KUSTOMIZE build config/default/edge | KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=knative-edge-e2e-edge ko resolve -f - | KUBECONFIG=$TMP/kubeconfig-edge kubectl apply -f -
+$KUSTOMIZE build config/default/edge | KO_DOCKER_REPO=$REPO KIND_CLUSTER_NAME=knative-edge-e2e-edge ko resolve --platform linux/amd64,linux/arm64,linux/arm -f - | KUBECONFIG=$TMP/kubeconfig-edge kubectl apply -f -
 
 KUBECONFIG=$TMP/kubeconfig-edge kubectl create namespace knative-edge-e2e --dry-run=client -o yaml | KUBECONFIG=$TMP/kubeconfig-edge kubectl apply -f -
 

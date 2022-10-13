@@ -86,6 +86,11 @@ func HasEdgeSyncLabelPredicate(envs []string) predicate.Predicate {
 		labelSelector = metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
+					Key:      controllers.AppLabel,
+					Operator: metav1.LabelSelectorOpIn,
+					Values:   []string{"knative-edge"},
+				},
+				{
 					Key:      controllers.EnvironmentLabel,
 					Operator: metav1.LabelSelectorOpExists,
 				},
@@ -94,6 +99,11 @@ func HasEdgeSyncLabelPredicate(envs []string) predicate.Predicate {
 	} else {
 		labelSelector = metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      controllers.AppLabel,
+					Operator: metav1.LabelSelectorOpIn,
+					Values:   []string{"knative-edge"},
+				},
 				{
 					Key:      controllers.EnvironmentLabel,
 					Operator: metav1.LabelSelectorOpIn,

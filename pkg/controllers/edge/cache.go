@@ -18,6 +18,11 @@ func EnvScopedCache(envs []string) cache.NewCacheFunc {
 		labelSelector = metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
+					Key:      controllers.AppLabel,
+					Operator: metav1.LabelSelectorOpIn,
+					Values:   []string{"knative-edge"},
+				},
+				{
 					Key:      controllers.EnvironmentLabel,
 					Operator: metav1.LabelSelectorOpExists,
 				},
@@ -26,6 +31,11 @@ func EnvScopedCache(envs []string) cache.NewCacheFunc {
 	} else {
 		labelSelector = metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      controllers.AppLabel,
+					Operator: metav1.LabelSelectorOpIn,
+					Values:   []string{"knative-edge"},
+				},
 				{
 					Key:      controllers.EnvironmentLabel,
 					Operator: metav1.LabelSelectorOpIn,

@@ -17,9 +17,7 @@ NAMESPACE="$4"
 ca=$(kubectl config view --minify --raw --output 'jsonpath={..cluster.certificate-authority-data}')
 token=$(kubectl create token --namespace $NAMESPACE $SERVICE_ACCOUNT_NAME)
 
-echo "
----
-apiVersion: v1
+echo "apiVersion: v1
 kind: Config
 clusters:
   - name: ${CLUSTER_NAME}

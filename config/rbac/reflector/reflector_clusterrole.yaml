@@ -4,8 +4,9 @@ metadata:
   name: knative-edge-reflector-role
 aggregationRule:
   clusterRoleSelectors:
-  - matchLabels:
-      edge.jevv.dev/synchronize: ""
+  - matchExpressions:
+    - key: edge.jevv.dev/environment
+      operator: Exists
 rules:
 - apiGroups:
   - ""

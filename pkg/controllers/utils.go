@@ -22,9 +22,10 @@ func UpdateLabels(object client.Object) {
 
 	if labels == nil {
 		labels = make(map[string]string)
-		object.SetAnnotations(labels)
+		object.SetLabels(labels)
 	}
 
+	labels[AppLabel] = "knative-edge"
 	labels[ManagedLabel] = "true"
 	labels[ManagedByLabel] = "knative-edge"
 	labels[CreatedByLabel] = "knative-edge-controller"

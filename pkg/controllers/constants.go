@@ -6,11 +6,11 @@ const (
 )
 
 const (
-	EnvironmentLabel = "edge.jevv.dev/environment"
-	ManagedLabel     = "edge.jevv.dev/managed"
-	EdgeLocalLabel   = "edge.jevv.dev/edge-local"
-	ManagedByLabel   = "app.kubernetes.io/managed-by"
-	CreatedByLabel   = "app.kubernetes.io/created-by"
+	EnvironmentLabel = "edge-environment"
+	ManagedLabel     = "edge-managed"
+	EdgeLocalLabel   = "edge-local"
+	ManagedByLabel   = "managed-by"
+	CreatedByLabel   = "created-by"
 
 	AppLabel        = "app"
 	ServiceLabel    = "service"

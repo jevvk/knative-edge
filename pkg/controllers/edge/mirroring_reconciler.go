@@ -99,8 +99,6 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 
 		if lastRemoteGeneration != remoteGeneration {
 			shouldUpdate = lastRemoteGeneration != ""
-
-			controllers.UpdateLabels(localKind)
 			kindAnnotations[controllers.LastRemoteGenerationAnnotation] = remoteGeneration
 		}
 
@@ -113,6 +111,9 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 				}
 			}
 		}
+
+		controllers.UpdateLabels(localKind)
+		controllers.UpdateLastGenerationAnnotation(localKind, localKind)
 	}
 
 	if shouldCreate {
@@ -153,6 +154,7 @@ func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager, predic
 			r.KindGenerator(),
 			builder.WithPredicates(
 				predicate.GenerationChangedPredicate{},
+				IsManagedByEdgeControllers,
 				NotChangedByEdgeControllers{},
 			),
 		).

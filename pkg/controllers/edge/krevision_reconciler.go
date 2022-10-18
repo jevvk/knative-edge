@@ -18,9 +18,9 @@ import (
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *servingv1.Service) (ctrl.Result, error) {
+func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *servingv1.Service) kindPreProcessorResult {
 	if service == nil {
-		return ctrl.Result{}, nil
+		return kindPreProcessorResult{Result: ctrl.Result{}}
 	}
 
 	shouldCreate := false
@@ -34,7 +34,7 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 
 	if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
+			return kindPreProcessorResult{Err: err}
 		}
 
 		shouldCreate = true
@@ -52,10 +52,10 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 
 		if err := r.Create(ctx, revision); err != nil {
 			if apierrors.IsConflict(err) {
-				return ctrl.Result{Requeue: true}, nil
+				return kindPreProcessorResult{Result: ctrl.Result{Requeue: true}}
 			}
 
-			return ctrl.Result{}, err
+			return kindPreProcessorResult{Err: err}
 		}
 	} else if shouldUpdate {
 		newRevision := r.buildRevision(revisionNamespacedName, service)
@@ -64,22 +64,23 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 
 		if err := r.Update(ctx, newRevision); err != nil {
 			if apierrors.IsConflict(err) {
-				return ctrl.Result{Requeue: true}, nil
+				return kindPreProcessorResult{Result: ctrl.Result{Requeue: true}}
 			}
 
-			return ctrl.Result{}, err
+			return kindPreProcessorResult{Err: err}
 		}
 	} else if shouldDelete {
 		if err := r.Delete(ctx, revision); err != nil {
 			if apierrors.IsNotFound(err) {
-				return ctrl.Result{}, nil
+				return kindPreProcessorResult{}
 			}
 
-			return ctrl.Result{}, err
+			return kindPreProcessorResult{Err: err}
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return kindPreProcessorResult{}
+}
 }
 
 func (r *KServiceReconciler) buildRevision(namespacedName types.NamespacedName, service *servingv1.Service) *servingv1.Revision {

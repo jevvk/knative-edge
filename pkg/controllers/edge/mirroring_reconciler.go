@@ -23,7 +23,7 @@ import (
 
 type kindGenerator[T client.Object] func() T
 type kindMerger[T client.Object] func(src, dst T) error
-type kindPreProcessor[T client.Object] func(ctx context.Context, kind T) (ctrl.Result, error)
+type kindPreProcessor[T client.Object] func(ctx context.Context, kind T) kindPreProcessorResult
 
 type MirroringReconciler[T client.Object] struct {
 	client.Client
@@ -38,6 +38,12 @@ type MirroringReconciler[T client.Object] struct {
 	KindPreProcessors *[]kindPreProcessor[T]
 
 	Envs []string
+}
+
+type kindPreProcessorResult struct {
+	Result       ctrl.Result
+	Err          error
+	ShouldUpdate bool
 }
 
 func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -95,10 +101,12 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 
 		if r.KindPreProcessors != nil {
 			for _, preprocessor := range *r.KindPreProcessors {
-				res, err := preprocessor(ctx, localKind)
+				res := preprocessor(ctx, localKind)
 
-				if err != nil || res.Requeue || res.RequeueAfter > 0 {
-					return res, err
+				shouldUpdate = shouldUpdate || res.ShouldUpdate
+
+				if res.Err != nil || res.Result.Requeue || res.Result.RequeueAfter > 0 {
+					return res.Result, res.Err
 				}
 			}
 		}
@@ -111,6 +119,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	r.Log.V(3).Info("debug bool", "resource", req.NamespacedName.String(), "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
 
 	if shouldCreate {
+		r.Log.V(1).Info("Creating local resource.", "name", req.NamespacedName.String())
 		if err := r.Create(ctx, localKind); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil
@@ -119,6 +128,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 	} else if shouldDelete {
+		r.Log.V(1).Info("Deleting local resource.", "name", req.NamespacedName.String())
 		if err := r.Delete(ctx, localKind); err != nil {
 			if apierrors.IsNotFound(err) {
 				return ctrl.Result{}, nil
@@ -127,6 +137,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, err
 		}
 	} else if shouldUpdate {
+		r.Log.V(1).Info("Updating local resource.", "name", req.NamespacedName.String())
 		if err := r.Update(ctx, localKind); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil

@@ -15,9 +15,9 @@ import (
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *servingv1.Service) (ctrl.Result, error) {
+func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *servingv1.Service) kindPreProcessorResult {
 	if service == nil {
-		return ctrl.Result{}, nil
+		return kindPreProcessorResult{}
 	}
 
 	var revision *servingv1.Revision
@@ -50,7 +50,7 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 			return ctrl.Result{}, err
 		}
 
-		return ctrl.Result{}, nil
+		return kindPreProcessorResult{}
 	}
 
 	// ensure latest target is specified
@@ -76,15 +76,15 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 			// something is not right, target exists, but revision doesn't
 			// requeue after some time
 			if apierrors.IsNotFound(err) {
-				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+				return kindPreProcessorResult{Result: ctrl.Result{RequeueAfter: 5 * time.Second}}
 			}
 
-			return ctrl.Result{}, nil
+			return kindPreProcessorResult{}
 		}
 
 		// early exit if generation is the same
 		if fmt.Sprint(revision.GetGeneration()) == getRevisionGenerationFromTarget(target) {
-			return ctrl.Result{}, nil
+			return kindPreProcessorResult{}
 		}
 
 		// finally, update the tag
@@ -96,10 +96,10 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 
 		if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
 			if apierrors.IsNotFound(err) {
-				return ctrl.Result{}, nil
+				return kindPreProcessorResult{}
 			}
 
-			return ctrl.Result{}, err
+			return kindPreProcessorResult{Err: err}
 		}
 
 		// we know the revision exists but the revision isn't set in the service,
@@ -114,8 +114,5 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		})
 	}
 
-	// finally, update the service
-	controllers.UpdateLastGenerationAnnotation(service, service)
-
-	return ctrl.Result{}, nil
+	return kindPreProcessorResult{ShouldUpdate: true}
 }

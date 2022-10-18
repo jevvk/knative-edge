@@ -40,17 +40,16 @@ func (r *SecretReconciler) kindMerger(src, dst *corev1.Secret) error {
 		return nil
 	}
 
+	src = src.DeepCopy()
+
 	if dst == nil {
 		*dst = corev1.Secret{}
 	}
 
-	dst.ObjectMeta = metav1.ObjectMeta{
-		Name:        src.ObjectMeta.Name,
-		Namespace:   src.ObjectMeta.Namespace,
-		Annotations: src.ObjectMeta.Annotations,
-		Labels:      src.ObjectMeta.Labels,
-	}
-
+	dst.Name = src.Name
+	dst.Namespace = src.Namespace
+	dst.Annotations = src.Annotations
+	dst.Labels = src.Labels
 	dst.Data = src.Data
 
 	return nil

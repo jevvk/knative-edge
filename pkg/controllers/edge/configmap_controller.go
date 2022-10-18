@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -40,17 +39,16 @@ func (r *ConfigMapReconciler) kindMerger(src, dst *corev1.ConfigMap) error {
 		return nil
 	}
 
+	src = src.DeepCopy()
+
 	if dst == nil {
 		*dst = corev1.ConfigMap{}
 	}
 
-	dst.ObjectMeta = metav1.ObjectMeta{
-		Name:        src.ObjectMeta.Name,
-		Namespace:   src.ObjectMeta.Namespace,
-		Annotations: src.ObjectMeta.Annotations,
-		Labels:      src.ObjectMeta.Labels,
-	}
-
+	dst.Name = src.Name
+	dst.Namespace = src.Namespace
+	dst.Annotations = src.Annotations
+	dst.Labels = src.Labels
 	dst.Data = src.Data
 
 	return nil

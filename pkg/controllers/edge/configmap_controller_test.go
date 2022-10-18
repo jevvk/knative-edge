@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -31,6 +31,7 @@ var _ = Describe("configmap controller", func() {
 					Name:      "configmap-test",
 					Namespace: "default",
 					Labels: map[string]string{
+						edgecontrollers.AppLabel:         "knative-edge",
 						edgecontrollers.EnvironmentLabel: "testA",
 					},
 				},
@@ -42,7 +43,7 @@ var _ = Describe("configmap controller", func() {
 
 			Expect(remoteClusterClient.Create(ctx, configMap)).Should(Succeed())
 
-			namespacedName := types.NamespacedName{Name: "foo", Namespace: "default"}
+			namespacedName := types.NamespacedName{Name: "configmap-test", Namespace: "default"}
 			mirroredConfigMap := &corev1.ConfigMap{}
 
 			Eventually(func() bool {

@@ -50,10 +50,9 @@ var _ = Describe("configmap controller", func() {
 				Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
 			})
 
-			Eventually(func() bool {
-				err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func() error {
+				return edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap)
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("should update replicated resources", func() {
@@ -83,17 +82,10 @@ var _ = Describe("configmap controller", func() {
 				Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
 			})
 
-			Eventually(func() bool {
-				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
-					return false
-				}
-
-				if value, ok := mirroredConfigMap.Data["check"]; ok {
-					return value == "before"
-				}
-
-				return false
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func(g Gomega) {
+				g.Expect(edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap)).To(Succeed())
+				g.Expect(mirroredConfigMap.Data["check"]).To(Equal("before"))
+			}, timeout, interval).Should(Succeed())
 
 			By("updating the configmap")
 			configMap.Data["check"] = "after"
@@ -101,17 +93,10 @@ var _ = Describe("configmap controller", func() {
 
 			Expect(remoteClusterClient.Update(ctx, configMap)).Should(Succeed())
 
-			Eventually(func() bool {
-				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
-					return false
-				}
-
-				if value, ok := mirroredConfigMap.Data["check"]; ok {
-					return value == "after"
-				}
-
-				return false
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func(g Gomega) {
+				g.Expect(edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap)).To(Succeed())
+				g.Expect(mirroredConfigMap.Data["check"]).To(Equal("after"))
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("should delete replicated resources", func() {
@@ -138,24 +123,16 @@ var _ = Describe("configmap controller", func() {
 
 			Expect(remoteClusterClient.Create(ctx, configMap)).Should(Succeed())
 
-			Eventually(func() bool {
-				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
-					return false
-				}
-
-				return true
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func() error {
+				return edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap)
+			}, timeout, interval).Should(Succeed())
 
 			By("deleting the configmap")
 			Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
 
-			Eventually(func() bool {
-				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
-					return true
-				}
-
-				return false
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func() error {
+				return edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap)
+			}, timeout, interval).Should(Not(Succeed()))
 		})
 	})
 })

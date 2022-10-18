@@ -72,10 +72,9 @@ var _ = Describe("knative service controller", func() {
 				Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
 			})
 
-			Eventually(func() bool {
-				err := edgeClusterClient.Get(ctx, namespacedName, mirroredService)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func() error {
+				return edgeClusterClient.Get(ctx, namespacedName, mirroredService)
+			}, timeout, interval).Should(Not(Succeed()))
 		})
 
 		It("should update replicated resources", func() {
@@ -126,17 +125,11 @@ var _ = Describe("knative service controller", func() {
 				Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
 			})
 
-			Eventually(func() bool {
-				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredService); err != nil {
-					return false
-				}
-
-				if value, ok := mirroredService.Annotations["check"]; ok {
-					return value == "before"
-				}
-
-				return false
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func(g Gomega) {
+				g.Expect(edgeClusterClient.Get(ctx, namespacedName, mirroredService)).Should(Succeed())
+				g.Expect(mirroredService.Annotations["check"]).To(Equal("before"))
+				g.Expect(mirroredService.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("World"))
+			}, timeout, interval).Should(Succeed())
 
 			By("updating the service")
 			service.Annotations["check"] = "after"
@@ -145,17 +138,11 @@ var _ = Describe("knative service controller", func() {
 
 			Expect(remoteClusterClient.Update(ctx, service)).Should(Succeed())
 
-			Eventually(func() bool {
-				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredService); err != nil {
-					return false
-				}
-
-				if value, ok := mirroredService.Annotations["check"]; ok && value != "after" {
-					return false
-				}
-
-				return mirroredService.Spec.Template.Spec.Containers[0].Env[0].Value == "world"
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func(g Gomega) {
+				g.Expect(edgeClusterClient.Get(ctx, namespacedName, mirroredService)).Should(Succeed())
+				g.Expect(mirroredService.Annotations["check"]).To(Equal("after"))
+				g.Expect(mirroredService.Spec.Template.Spec.Containers[0].Env[0].Value).To(Equal("world"))
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("should delete replicated resources", func() {
@@ -203,24 +190,16 @@ var _ = Describe("knative service controller", func() {
 
 			Expect(remoteClusterClient.Create(ctx, service)).Should(Succeed())
 
-			Eventually(func() bool {
-				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredService); err != nil {
-					return false
-				}
-
-				return true
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func() error {
+				return edgeClusterClient.Get(ctx, namespacedName, mirroredService)
+			}, timeout, interval).Should(Succeed())
 
 			By("deleting the service")
 			Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
 
-			Eventually(func() bool {
-				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredService); err != nil {
-					return true
-				}
-
-				return false
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func() error {
+				return edgeClusterClient.Get(ctx, namespacedName, mirroredService)
+			}, timeout, interval).Should(Not(Succeed()))
 		})
 	})
 
@@ -273,30 +252,16 @@ var _ = Describe("knative service controller", func() {
 				Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
 			})
 
-			Eventually(func() bool {
-				err := edgeClusterClient.Get(ctx, namespacedName, mirroredService)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
-
-			Expect(len(mirroredService.Spec.RouteSpec.Traffic)).Should(BeNumerically(">", 0))
-			Expect(len(mirroredService.Spec.RouteSpec.Traffic)).Should(BeNumerically("<=", 2))
-
-			Eventually(func() bool {
-				err := edgeClusterClient.Get(ctx, namespacedName, mirroredService)
-
-				if err != nil {
-					return false
-				}
-
-				return len(mirroredService.Spec.RouteSpec.Traffic) == 2
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func(g Gomega) {
+				g.Expect(edgeClusterClient.Get(ctx, namespacedName, mirroredService)).Should(Succeed())
+				g.Expect(mirroredService.Spec.RouteSpec.Traffic).Should(HaveLen(2))
+			}, timeout, interval).Should(Succeed())
 
 			revision := &servingv1.Revision{}
 
-			Eventually(func() bool {
-				err := edgeClusterClient.Get(ctx, getRevisionNamespacedName(namespacedName), revision)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func() error {
+				return edgeClusterClient.Get(ctx, getRevisionNamespacedName(namespacedName), revision)
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 })

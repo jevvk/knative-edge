@@ -67,11 +67,12 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 
 	if err := r.Get(ctx, req.NamespacedName, localKind); err != nil {
 		if apierrors.IsNotFound(err) {
-			shouldCreate = true
+			shouldCreate = !shouldDelete
+			shouldDelete = false // can't delete something that doesn't exist
 		} else {
 			return ctrl.Result{}, err
 		}
-	} else if IsManagedObject(localKind) && !HasEdgeSyncLabel(remoteKind, r.Envs) {
+	} else if !shouldDelete && IsManagedObject(localKind) && !HasEdgeSyncLabel(remoteKind, r.Envs) {
 		// delete is edge sync label no longer valid (e.g. if envs change)
 		shouldDelete = true
 	}

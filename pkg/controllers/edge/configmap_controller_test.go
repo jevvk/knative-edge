@@ -23,13 +23,17 @@ var _ = Describe("configmap controller", func() {
 
 	Context("when creating new resource", func() {
 		It("should replicate resources", func() {
-			By("creating a configmap")
+			var mirroredConfigMap, configMap *corev1.ConfigMap
 			ctx := context.Background()
 
-			configMap := &corev1.ConfigMap{
+			By("creating a configmap")
+			namespacedName := types.NamespacedName{Name: "configmap-test-1", Namespace: "default"}
+
+			mirroredConfigMap = &corev1.ConfigMap{}
+			configMap = &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "configmap-test",
-					Namespace: "default",
+					Name:      namespacedName.Name,
+					Namespace: namespacedName.Namespace,
 					Labels: map[string]string{
 						edgecontrollers.AppLabel:         "knative-edge",
 						edgecontrollers.EnvironmentLabel: "testA",
@@ -43,12 +47,114 @@ var _ = Describe("configmap controller", func() {
 
 			Expect(remoteClusterClient.Create(ctx, configMap)).Should(Succeed())
 
-			namespacedName := types.NamespacedName{Name: "configmap-test", Namespace: "default"}
-			mirroredConfigMap := &corev1.ConfigMap{}
-
 			Eventually(func() bool {
 				err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap)
 				return err == nil
+			}, timeout, interval).Should(BeTrue())
+
+			// clean up
+			Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
+		})
+
+		It("should update replicated resources", func() {
+			var mirroredConfigMap, configMap *corev1.ConfigMap
+			ctx := context.Background()
+
+			By("creating a configmap")
+			namespacedName := types.NamespacedName{Name: "configmap-test-2", Namespace: "default"}
+
+			mirroredConfigMap = &corev1.ConfigMap{}
+			configMap = &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      namespacedName.Name,
+					Namespace: namespacedName.Namespace,
+					Labels: map[string]string{
+						edgecontrollers.AppLabel:         "knative-edge",
+						edgecontrollers.EnvironmentLabel: "testA",
+					},
+				},
+				Data: map[string]string{
+					"check": "before",
+				},
+			}
+
+			Expect(remoteClusterClient.Create(ctx, configMap)).Should(Succeed())
+
+			Eventually(func() bool {
+				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
+					return false
+				}
+
+				if value, ok := mirroredConfigMap.Data["check"]; ok {
+					return value == "before"
+				}
+
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("updating the configmap")
+			configMap.Data["check"] = "after"
+			mirroredConfigMap = &corev1.ConfigMap{}
+
+			Expect(remoteClusterClient.Update(ctx, configMap)).Should(Succeed())
+
+			Eventually(func() bool {
+				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
+					return false
+				}
+
+				if value, ok := mirroredConfigMap.Data["check"]; ok {
+					return value == "after"
+				}
+
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			// clean up
+			Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
+		})
+
+		It("should delete replicated resources", func() {
+			var mirroredConfigMap, configMap *corev1.ConfigMap
+			ctx := context.Background()
+
+			By("creating a configmap")
+			namespacedName := types.NamespacedName{Name: "configmap-test-3", Namespace: "default"}
+
+			mirroredConfigMap = &corev1.ConfigMap{}
+			configMap = &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      namespacedName.Name,
+					Namespace: namespacedName.Namespace,
+					Labels: map[string]string{
+						edgecontrollers.AppLabel:         "knative-edge",
+						edgecontrollers.EnvironmentLabel: "testA",
+					},
+				},
+				Data: map[string]string{
+					"foo": "bar",
+				},
+			}
+
+			Expect(remoteClusterClient.Create(ctx, configMap)).Should(Succeed())
+
+			Eventually(func() bool {
+				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
+					return false
+				}
+
+				return true
+			}, timeout, interval).Should(BeTrue())
+
+			By("deleting the configmap")
+			Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
+
+			Eventually(func() bool {
+				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
+					return true
+				}
+
+				return false
 			}, timeout, interval).Should(BeTrue())
 		})
 	})

@@ -27,7 +27,7 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 	shouldUpdate := false
 	shouldDelete := false
 
-	var revision *servingv1.Revision
+	revision := &servingv1.Revision{}
 
 	serviceNamespacedName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
 	revisionNamespacedName := getRevisionNamespacedName(serviceNamespacedName)
@@ -40,15 +40,16 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 		shouldCreate = true
 	}
 
-	if !shouldCreate && !kServiceHasAnnotation(service) {
-		shouldDelete = true
+	if !kServiceHasComputeOffloadAnnotation(service) {
+		shouldDelete = !shouldCreate
+		shouldCreate = false
 	}
 
 	// TODO: check if we should update
 
 	if shouldCreate {
-		revision = r.buildRevision(revisionNamespacedName, service)
-		controllerutil.SetControllerReference(service, revision, r.Scheme)
+		r.buildRevision(revisionNamespacedName, revision, service)
+		// controllerutil.SetControllerReference(service, revision, r.Scheme)
 
 		if err := r.Create(ctx, revision); err != nil {
 			if apierrors.IsConflict(err) {
@@ -58,11 +59,11 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 			return kindPreProcessorResult{Err: err}
 		}
 	} else if shouldUpdate {
-		newRevision := r.buildRevision(revisionNamespacedName, service)
-		controllerutil.SetControllerReference(service, revision, r.Scheme)
-		controllers.UpdateLastGenerationAnnotation(revision, newRevision)
+		r.buildRevision(revisionNamespacedName, revision, service)
+		// controllerutil.SetControllerReference(service, revision, r.Scheme)
+		controllers.UpdateLastGenerationAnnotation(revision)
 
-		if err := r.Update(ctx, newRevision); err != nil {
+		if err := r.Update(ctx, revision); err != nil {
 			if apierrors.IsConflict(err) {
 				return kindPreProcessorResult{Result: ctrl.Result{Requeue: true}}
 			}
@@ -81,36 +82,44 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 
 	return kindPreProcessorResult{}
 }
+
+func (r *KServiceReconciler) buildRevision(namespacedName types.NamespacedName, revision *servingv1.Revision, service *servingv1.Service) {
+	annotations := service.Annotations
+
+	if annotations == nil {
+		annotations = make(map[string]string)
+		revision.Annotations = annotations
 }
 
-func (r *KServiceReconciler) buildRevision(namespacedName types.NamespacedName, service *servingv1.Service) *servingv1.Revision {
-	return &servingv1.Revision{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      namespacedName.Name,
-			Namespace: namespacedName.Namespace,
-			Labels: map[string]string{
-				controllers.ManagedLabel:   "true",
-				controllers.EdgeLocalLabel: "true",
-				controllers.CreatedByLabel: "knative-edge-computeoffload-controller",
-				controllers.ManagedByLabel: "knative-edge-computeoffload-controller",
-			},
-			Annotations: map[string]string{
-				controllers.KnativeNoGCAnnotation: "true",
-			},
-		},
-		// TODO: pass domain mapping from remote
+	labels := revision.Labels
+
+	if labels == nil {
+		labels = make(map[string]string)
+		revision.Labels = labels
+	}
+
+	revision.Name = namespacedName.Name
+	revision.Namespace = namespacedName.Namespace
+
+	labels[controllers.ManagedByLabel] = "true"
+	labels[controllers.EdgeLocalLabel] = "true"
+	labels[controllers.CreatedByLabel] = "knative-edge-computeoffload-controller"
+	labels[controllers.ManagedByLabel] = "knative-edge-computeoffload-controller"
+
+	// annotations[controllers.KnativeNoGCAnnotation] = "true"
+
 		// TODO: set concurrency and timeout
-		Spec: servingv1.RevisionSpec{
+	revision.Spec = servingv1.RevisionSpec{
 			PodSpec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
 						Name:  fmt.Sprintf("%s-compute-offload-proxy", namespacedName.Name),
 						Image: r.ProxyImage,
 						Env: []corev1.EnvVar{
+						{Name: "REMOTE_URL", Value: annotations[controllers.RemoteUrlAnnotation]},
 							{Name: "HTTP_PROXY", Value: os.Getenv("HTTP_PROXY")},
 							{Name: "HTTPS_PROXY", Value: os.Getenv("HTTPS_PROXY")},
 							{Name: "NO_PROXY", Value: os.Getenv("NO_PROXY")},
-						},
 					},
 				},
 			},

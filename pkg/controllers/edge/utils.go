@@ -43,7 +43,7 @@ func getComputeOffloadTarget(service *servingv1.Service) *servingv1.TrafficTarge
 	return nil
 }
 
-func getLatestResivionTarget(service *servingv1.Service) *servingv1.TrafficTarget {
+func getLatestRevisionTarget(service *servingv1.Service) *servingv1.TrafficTarget {
 	if service == nil {
 		return nil
 	}

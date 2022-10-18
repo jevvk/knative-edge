@@ -17,7 +17,6 @@ import (
 
 	"edge.jevv.dev/pkg/controllers"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
@@ -38,7 +37,7 @@ type KServiceReconciler struct {
 	mirror *MirroringReconciler[*servingv1.Service]
 }
 
-func kServiceHasAnnotation(service *servingv1.Service) bool {
+func kServiceHasComputeOffloadAnnotation(service *servingv1.Service) bool {
 	if service == nil {
 		return false
 	}
@@ -73,23 +72,6 @@ func (r *KServiceReconciler) kindMerger(src, dst *servingv1.Service) error {
 	dst.Labels = src.Labels
 	dst.Spec = src.Spec
 
-	annotations := dst.Annotations
-
-	if annotations == nil {
-		annotations = make(map[string]string)
-		dst.Annotations = annotations
-	}
-
-	if src.Status.URL != nil {
-		url := src.Status.URL.String()
-
-		if !strings.HasSuffix(url, "/") {
-			url += "/"
-		}
-
-		annotations[controllers.RemoteUrlAnnotation] = url
-	}
-
 	return nil
 }
 
@@ -114,9 +96,8 @@ func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...pr
 		Owns(
 			&servingv1.Revision{},
 			builder.WithPredicates(
-				predicate.And(
-					predicate.GenerationChangedPredicate{},
-					predicate.NewPredicateFuncs(isComputeOffloadRevision)),
+				predicate.GenerationChangedPredicate{},
+				predicate.NewPredicateFuncs(isComputeOffloadRevision),
 			),
 		).
 		Complete(r)

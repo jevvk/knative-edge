@@ -41,12 +41,18 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	edgeClusterTestEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "overlays", "edge")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "..", "..", "config", "crd", "overlays", "edge"),
+			filepath.Join("..", "..", "..", "config", "crd", "tests"),
+		},
 		ErrorIfCRDPathMissing: true,
 	}
 
 	remoteClusterTestEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "overlays", "cloud")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "..", "..", "config", "crd", "overlays", "cloud"),
+			filepath.Join("..", "..", "..", "config", "crd", "tests"),
+		},
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -106,6 +112,17 @@ var _ = BeforeSuite(func() {
 			Log:           mgr.GetLogger().WithName("configmap-controller"),
 			Recorder:      mgr.GetEventRecorderFor("configmap-controller"),
 			RemoteCluster: remoteCluster,
+			Envs:          envs,
+		}).SetupWithManager(mgr, hasEdgeLabelPredicate)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = (&KServiceReconciler{
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			Log:           mgr.GetLogger().WithName("kservice-controller"),
+			Recorder:      mgr.GetEventRecorderFor("kservice-controller"),
+			RemoteCluster: remoteCluster,
+			ProxyImage:    "proxy.local",
 			Envs:          envs,
 		}).SetupWithManager(mgr, hasEdgeLabelPredicate)
 		Expect(err).ToNot(HaveOccurred())

@@ -77,28 +77,20 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if !shouldDelete {
-		r.KindMerger(remoteKind, localKind)
-
-		kindLabels := localKind.GetLabels()
 		kindAnnotations := localKind.GetAnnotations()
-
-		if kindLabels == nil {
-			kindLabels = make(map[string]string)
-			localKind.SetLabels(kindLabels)
-		}
 
 		if kindAnnotations == nil {
 			kindAnnotations = make(map[string]string)
-			localKind.SetAnnotations(kindAnnotations)
 		}
 
-		remoteGeneration := fmt.Sprint(remoteKind.GetGeneration())
-		lastRemoteGeneration := kindAnnotations[controllers.LastRemoteGenerationAnnotation]
+		remoteGeneration := fmt.Sprint(remoteKind.GetResourceVersion())
+		lastRemoteGeneration, lastRemoteGenerationExists := kindAnnotations[controllers.LastRemoteGenerationAnnotation]
 
-		if lastRemoteGeneration != remoteGeneration {
-			shouldUpdate = lastRemoteGeneration != ""
-			kindAnnotations[controllers.LastRemoteGenerationAnnotation] = remoteGeneration
+		if remoteGeneration != lastRemoteGeneration {
+			shouldUpdate = lastRemoteGenerationExists
 		}
+
+		r.KindMerger(remoteKind, localKind)
 
 		if r.KindPreProcessors != nil {
 			for _, preprocessor := range *r.KindPreProcessors {

@@ -40,16 +40,16 @@ func (r *NamespaceReconciler) kindMerger(src, dst *corev1.Namespace) error {
 		return nil
 	}
 
+	src = src.DeepCopy()
+
 	if dst == nil {
 		*dst = corev1.Namespace{}
 	}
 
-	dst.ObjectMeta = metav1.ObjectMeta{
-		Name:        src.ObjectMeta.Name,
-		Namespace:   src.ObjectMeta.Namespace,
-		Annotations: src.ObjectMeta.Annotations,
-		Labels:      src.ObjectMeta.Labels,
-	}
+	dst.Name = src.Name
+	dst.Namespace = src.Namespace
+	dst.Annotations = src.Annotations
+	dst.Labels = src.Labels
 
 	return nil
 }

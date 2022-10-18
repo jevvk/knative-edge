@@ -61,24 +61,23 @@ func (r *KServiceReconciler) kindMerger(src, dst *servingv1.Service) error {
 		return nil
 	}
 
+	src = src.DeepCopy()
+
 	if dst == nil {
 		*dst = servingv1.Service{}
 	}
 
-	dst.ObjectMeta = metav1.ObjectMeta{
-		Name:        src.ObjectMeta.Name,
-		Namespace:   src.ObjectMeta.Namespace,
-		Annotations: src.ObjectMeta.Annotations,
-		Labels:      src.ObjectMeta.Labels,
-	}
+	dst.Name = src.Name
+	dst.Namespace = src.Namespace
+	dst.Annotations = src.Annotations
+	dst.Labels = src.Labels
+	dst.Spec = src.Spec
 
-	src.Spec.DeepCopyInto(&dst.Spec)
-
-	annotations := dst.GetAnnotations()
+	annotations := dst.Annotations
 
 	if annotations == nil {
 		annotations = make(map[string]string)
-		dst.SetAnnotations(annotations)
+		dst.Annotations = annotations
 	}
 
 	if src.Status.URL != nil {

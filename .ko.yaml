@@ -5,6 +5,12 @@ builds:
   ldflags:
   - -s
   - -w
+- id: operator
+  dir: .
+  main: ./cmd/operator
+  ldflags:
+  - -s
+  - -w
 - id: proxy
   dir: .
   main: ./cmd/proxy

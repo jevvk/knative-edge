@@ -9,12 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	// "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"edge.jevv.dev/pkg/controllers"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
@@ -45,9 +44,14 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 		shouldCreate = false
 	}
 
+	r.Log.V(3).WithName("revision").Info("debug bool", "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
+	r.Log.V(3).WithName("revision").Info("debug name", "revisionName", revisionNamespacedName)
+
 	// TODO: check if we should update
 
 	if shouldCreate {
+		r.Log.V(3).WithName("revision").Info("Creating edge proxy route.", "name", revisionNamespacedName)
+
 		r.buildRevision(revisionNamespacedName, revision, service)
 		// controllerutil.SetControllerReference(service, revision, r.Scheme)
 
@@ -56,9 +60,13 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 				return kindPreProcessorResult{Result: ctrl.Result{Requeue: true}}
 			}
 
+			r.Log.V(3).WithName("revision").Error(err, "couldn't create revision")
+
 			return kindPreProcessorResult{Err: err}
 		}
 	} else if shouldUpdate {
+		r.Log.V(3).WithName("revision").Info("Updating edge proxy route.", "name", revisionNamespacedName)
+
 		r.buildRevision(revisionNamespacedName, revision, service)
 		// controllerutil.SetControllerReference(service, revision, r.Scheme)
 		controllers.UpdateLastGenerationAnnotation(revision)
@@ -71,6 +79,8 @@ func (r *KServiceReconciler) reconcileKRevision(ctx context.Context, service *se
 			return kindPreProcessorResult{Err: err}
 		}
 	} else if shouldDelete {
+		r.Log.V(3).WithName("revision").Info("Deleting edge proxy route.", "name", revisionNamespacedName)
+
 		if err := r.Delete(ctx, revision); err != nil {
 			if apierrors.IsNotFound(err) {
 				return kindPreProcessorResult{}
@@ -89,7 +99,7 @@ func (r *KServiceReconciler) buildRevision(namespacedName types.NamespacedName, 
 	if annotations == nil {
 		annotations = make(map[string]string)
 		revision.Annotations = annotations
-}
+	}
 
 	labels := revision.Labels
 
@@ -108,18 +118,18 @@ func (r *KServiceReconciler) buildRevision(namespacedName types.NamespacedName, 
 
 	// annotations[controllers.KnativeNoGCAnnotation] = "true"
 
-		// TODO: set concurrency and timeout
+	// TODO: set concurrency and timeout
 	revision.Spec = servingv1.RevisionSpec{
-			PodSpec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:  fmt.Sprintf("%s-compute-offload-proxy", namespacedName.Name),
-						Image: r.ProxyImage,
-						Env: []corev1.EnvVar{
+		PodSpec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  fmt.Sprintf("%s-compute-offload-proxy", namespacedName.Name),
+					Image: r.ProxyImage,
+					Env: []corev1.EnvVar{
 						{Name: "REMOTE_URL", Value: annotations[controllers.RemoteUrlAnnotation]},
-							{Name: "HTTP_PROXY", Value: os.Getenv("HTTP_PROXY")},
-							{Name: "HTTPS_PROXY", Value: os.Getenv("HTTPS_PROXY")},
-							{Name: "NO_PROXY", Value: os.Getenv("NO_PROXY")},
+						{Name: "HTTP_PROXY", Value: os.Getenv("HTTP_PROXY")},
+						{Name: "HTTPS_PROXY", Value: os.Getenv("HTTPS_PROXY")},
+						{Name: "NO_PROXY", Value: os.Getenv("NO_PROXY")},
 					},
 				},
 			},

@@ -44,13 +44,11 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 	r.Log.Info("Started reconciling remote and local cluster.", "resource", req.NamespacedName.String())
 
 	if r.Client == nil {
-		r.Log.Info("nil client")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, fmt.Errorf("no local kube client")
 	}
 
 	if r.RemoteCluster.GetClient() == nil {
-		r.Log.Info("nil remote client")
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, fmt.Errorf("no remote kube client")
 	}
 
 	localKind, remoteKind := r.KindGenerator(), r.KindGenerator()

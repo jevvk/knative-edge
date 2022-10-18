@@ -111,8 +111,9 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			}
 		}
 
+		controllers.UpdateLastGenerationAnnotation(localKind)
+		controllers.UpdateLastRemoteGenerationAnnotation(localKind, remoteKind)
 		controllers.UpdateLabels(localKind)
-		controllers.UpdateLastGenerationAnnotation(localKind, localKind)
 	}
 
 	r.Log.V(3).Info("debug kind", "resource", req.NamespacedName.String(), "localKind", localKind, "remoteKind", remoteKind)
@@ -158,7 +159,6 @@ func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager, predic
 		For(
 			r.KindGenerator(),
 			builder.WithPredicates(
-				predicate.GenerationChangedPredicate{},
 				IsManagedByEdgeControllers,
 				NotChangedByEdgeControllers{},
 			),

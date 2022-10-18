@@ -47,7 +47,7 @@ func (NotChangedByEdgeControllers) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
-	oldGeneration := fmt.Sprint(e.ObjectOld.GetGeneration())
+	oldGeneration := fmt.Sprint(e.ObjectOld.GetResourceVersion())
 	newGeneration := annotations[controllers.LastGenerationAnnotation]
 
 	return oldGeneration != newGeneration

@@ -6,15 +6,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func UpdateLastGenerationAnnotation(src, dst client.Object) {
-	annotations := dst.GetAnnotations()
+func UpdateLastGenerationAnnotation(kind client.Object) {
+	annotations := kind.GetAnnotations()
 
 	if annotations == nil {
 		annotations = make(map[string]string)
-		dst.SetAnnotations(annotations)
+		kind.SetAnnotations(annotations)
 	}
 
-	annotations[LastGenerationAnnotation] = fmt.Sprint(src.GetGeneration())
+	annotations[LastGenerationAnnotation] = fmt.Sprint(kind.GetResourceVersion())
+}
+
+func UpdateLastRemoteGenerationAnnotation(localKind, remoteKind client.Object) {
+	annotations := localKind.GetAnnotations()
+
+	if annotations == nil {
+		annotations = make(map[string]string)
+		localKind.SetAnnotations(annotations)
+	}
+
+	annotations[LastRemoteGenerationAnnotation] = fmt.Sprint(remoteKind.GetResourceVersion())
 }
 
 func UpdateLabels(object client.Object) {

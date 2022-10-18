@@ -3,6 +3,7 @@ package edge
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -20,35 +21,52 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		return kindPreProcessorResult{}
 	}
 
-	var revision *servingv1.Revision
+	annotations := service.Annotations
+
+	if annotations == nil {
+		annotations = make(map[string]string)
+		service.Annotations = annotations
+	}
+
+	if service.Status.URL != nil {
+		url := service.Status.URL.String()
+
+		if !strings.HasSuffix(url, "/") {
+			url += "/"
+		}
+
+		annotations[controllers.RemoteUrlAnnotation] = url
+	}
+
+	revision := &servingv1.Revision{}
 
 	serviceNamespacedName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
 	revisionNamespacedName := getRevisionNamespacedName(serviceNamespacedName)
 
-	if !kServiceHasAnnotation(service) {
+	if !kServiceHasComputeOffloadAnnotation(service) {
 		// if the service doesn't have an annotation, it can mean 2 things
 		//   1. the annotation never existed, so the revision shouldn't exist
 		//   2. the annotation was removed, so the revision needs to be removed
 
-		if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return ctrl.Result{}, err
-			}
+		// if err := r.Get(ctx, revisionNamespacedName, revision); err != nil {
+		// 	if !apierrors.IsNotFound(err) {
+		// 		return ctrl.Result{}, err
+		// 	}
 
-			return ctrl.Result{}, nil
-		} else if err := r.Delete(ctx, revision); err != nil {
-			// something else deleted the revision
-			if apierrors.IsNotFound(err) {
-				return ctrl.Result{}, nil
-			}
+		// 	return ctrl.Result{}, nil
+		// } else if err := r.Delete(ctx, revision); err != nil {
+		// 	// something else deleted the revision
+		// 	if apierrors.IsNotFound(err) {
+		// 		return ctrl.Result{}, nil
+		// 	}
 
-			// requeue on conflict
-			if apierrors.IsConflict(err) {
-				return ctrl.Result{Requeue: true}, nil
-			}
+		// 	// requeue on conflict
+		// 	if apierrors.IsConflict(err) {
+		// 		return ctrl.Result{Requeue: true}, nil
+		// 	}
 
-			return ctrl.Result{}, err
-		}
+		// 	return ctrl.Result{}, err
+		// }
 
 		return kindPreProcessorResult{}
 	}
@@ -59,7 +77,7 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		service.Spec.Traffic = make([]servingv1.TrafficTarget, 0)
 	}
 
-	if target := getLatestResivionTarget(service); target == nil {
+	if target := getLatestRevisionTarget(service); target == nil {
 		var percent int64 = 100
 		var latestRevision bool = true
 
@@ -105,11 +123,8 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		// we know the revision exists but the revision isn't set in the service,
 		// so we add it as a traffic target
 
-		var percent int64 = 0
-
 		service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
 			RevisionName: getRevisionNamespacedName(serviceNamespacedName).Name,
-			Percent:      &percent,
 			Tag:          getTargetTagFromRevision(revision),
 		})
 	}

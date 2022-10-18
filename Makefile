@@ -84,7 +84,7 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./...
 
-.PHONE: e2e-test
+.PHONY: e2e-test
 e2e-test: manifests generate fmt vet envtest kustomize ## Run e2e tests.
 	@command -v kubectl > /dev/null || (echo "You must have 'kubectl' installed in order to run E2E tests."; exit 1)
 	@command -v kind > /dev/null || (echo "You must have 'kind' installed in order to run E2E tests."; exit 1)

@@ -41,7 +41,7 @@ type MirroringReconciler[T client.Object] struct {
 }
 
 func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Log.Info("Started reconciling remote and local cluster.", "resource", req.NamespacedName.String())
+	r.Log.V(1).Info("Started reconciling remote and local cluster.", "resource", req.NamespacedName.String())
 
 	if r.Client == nil {
 		return ctrl.Result{}, fmt.Errorf("no local kube client")
@@ -113,6 +113,9 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		controllers.UpdateLabels(localKind)
 		controllers.UpdateLastGenerationAnnotation(localKind, localKind)
 	}
+
+	r.Log.V(3).Info("debug kind", "resource", req.NamespacedName.String(), "localKind", localKind, "remoteKind", remoteKind)
+	r.Log.V(3).Info("debug bool", "resource", req.NamespacedName.String(), "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
 
 	if shouldCreate {
 		if err := r.Create(ctx, localKind); err != nil {

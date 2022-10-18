@@ -68,14 +68,14 @@ var _ = Describe("knative service controller", func() {
 			}
 
 			Expect(remoteClusterClient.Create(ctx, service)).Should(Succeed())
+			DeferCleanup(func() {
+				Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
+			})
 
 			Eventually(func() bool {
 				err := edgeClusterClient.Get(ctx, namespacedName, mirroredService)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
-
-			// clean up
-			Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
 		})
 
 		It("should update replicated resources", func() {
@@ -122,6 +122,9 @@ var _ = Describe("knative service controller", func() {
 			}
 
 			Expect(remoteClusterClient.Create(ctx, service)).Should(Succeed())
+			DeferCleanup(func() {
+				Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
+			})
 
 			Eventually(func() bool {
 				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredService); err != nil {
@@ -153,9 +156,6 @@ var _ = Describe("knative service controller", func() {
 
 				return mirroredService.Spec.Template.Spec.Containers[0].Env[0].Value == "world"
 			}, timeout, interval).Should(BeTrue())
-
-			// clean up
-			Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
 		})
 
 		It("should delete replicated resources", func() {
@@ -269,6 +269,9 @@ var _ = Describe("knative service controller", func() {
 			}
 
 			Expect(remoteClusterClient.Create(ctx, service)).Should(Succeed())
+			DeferCleanup(func() {
+				Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
+			})
 
 			Eventually(func() bool {
 				err := edgeClusterClient.Get(ctx, namespacedName, mirroredService)
@@ -294,9 +297,6 @@ var _ = Describe("knative service controller", func() {
 				err := edgeClusterClient.Get(ctx, getRevisionNamespacedName(namespacedName), revision)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
-
-			// clean up
-			Expect(remoteClusterClient.Delete(ctx, service)).Should(Succeed())
 		})
 	})
 })

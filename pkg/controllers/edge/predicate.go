@@ -17,7 +17,21 @@ type NotChangedByEdgeControllers struct {
 	predicate.Funcs
 }
 
-// Update implements default UpdateEvent filter for validating generation change.
+func (NotChangedByEdgeControllers) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+
+	annotations := e.Object.GetAnnotations()
+
+	if annotations == nil {
+		return false
+	}
+
+	// by default, it's 0 when create by edge controller
+	return annotations[controllers.LastGenerationAnnotation] != "0"
+}
+
 func (NotChangedByEdgeControllers) Update(e event.UpdateEvent) bool {
 	if e.ObjectOld == nil {
 		return false
@@ -27,8 +41,14 @@ func (NotChangedByEdgeControllers) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
+	annotations := e.ObjectNew.GetAnnotations()
+
+	if annotations == nil {
+		return false
+	}
+
 	oldGeneration := fmt.Sprint(e.ObjectOld.GetGeneration())
-	newGeneration := e.ObjectNew.GetAnnotations()[controllers.LastGenerationAnnotation]
+	newGeneration := annotations[controllers.LastGenerationAnnotation]
 
 	return oldGeneration != newGeneration
 }
@@ -60,6 +80,8 @@ func HasEdgeSyncLabel(obj client.Object, envs []string) bool {
 
 	return false
 }
+
+var IsManagedByEdgeControllers = predicate.NewPredicateFuncs(IsManagedObject)
 
 func IsManagedObject(obj client.Object) bool {
 	labels := obj.GetLabels()

@@ -46,14 +46,14 @@ var _ = Describe("configmap controller", func() {
 			}
 
 			Expect(remoteClusterClient.Create(ctx, configMap)).Should(Succeed())
+			DeferCleanup(func() {
+				Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
+			})
 
 			Eventually(func() bool {
 				err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
-
-			// clean up
-			Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
 		})
 
 		It("should update replicated resources", func() {
@@ -79,6 +79,9 @@ var _ = Describe("configmap controller", func() {
 			}
 
 			Expect(remoteClusterClient.Create(ctx, configMap)).Should(Succeed())
+			DeferCleanup(func() {
+				Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
+			})
 
 			Eventually(func() bool {
 				if err := edgeClusterClient.Get(ctx, namespacedName, mirroredConfigMap); err != nil {
@@ -109,9 +112,6 @@ var _ = Describe("configmap controller", func() {
 
 				return false
 			}, timeout, interval).Should(BeTrue())
-
-			// clean up
-			Expect(remoteClusterClient.Delete(ctx, configMap)).Should(Succeed())
 		})
 
 		It("should delete replicated resources", func() {

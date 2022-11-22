@@ -35,6 +35,13 @@ const (
 	ObservedGenerationAnnotation = "edge.jevv.dev/observed-generation"
 	ProxyImageAnnotation         = "edge.jevv.dev/proxy-image"
 	ControllerImageAnnotation    = "edge.jevv.dev/controller-image"
+
+	LastGenerationAnnotation       = "edge.jevv.dev/last-observed-generation"
+	LastRemoteGenerationAnnotation = "edge.jevv.dev/last-observed-remote-generation"
+	RemoteUrlAnnotation            = "edge.jevv.dev/remote-url"
+	RemoteHostAnnotation           = "edge.jevv.dev/remote-host"
+
+	KnativeNoGCAnnotation = "serving.knative.dev/no-gc"
 )
 
 const (

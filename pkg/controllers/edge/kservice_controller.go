@@ -33,6 +33,7 @@ type KServiceReconciler struct {
 	Scheme        *runtime.Scheme
 	Recorder      record.EventRecorder
 	RemoteCluster cluster.Cluster
+	RemoteUrl     string
 
 	ProxyImage string
 	Envs       []string
@@ -83,14 +84,10 @@ func (r *KServiceReconciler) kindMerger(src, dst *servingv1.Service) error {
 	}
 
 	if src.Status.URL != nil {
-		url := src.Status.URL.String()
-
-		if !strings.HasSuffix(url, "/") {
-			url += "/"
-		}
-
-		annotations[controllers.RemoteUrlAnnotation] = url
+		annotations[controllers.RemoteHostAnnotation] = src.Status.URL.Host
 	}
+
+	annotations[controllers.RemoteUrlAnnotation] = r.RemoteUrl
 
 	return nil
 }

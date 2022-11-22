@@ -504,6 +504,7 @@ func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName ty
 						Args: []string{
 							"--envs", strings.Join(edgeCluster.Spec.Environments, ","),
 							"--proxy-image", proxyImage,
+							"--remote-url", edge.Spec.ClusterHostnameOrIp,
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{

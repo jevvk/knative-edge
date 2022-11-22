@@ -41,6 +41,8 @@ import (
 	//+kubebuilder:scaffold:imports
 
 	"edge.jevv.dev/pkg/controllers/edge"
+	"edge.jevv.dev/pkg/controllers/edge/store"
+	"edge.jevv.dev/pkg/controllers/edge/workoffload"
 )
 
 var (
@@ -107,6 +109,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	trafficStore := store.Store{
+		Log: mgr.GetLogger().WithName("edge-traffic-store"),
+	}
+
+	if err = mgr.Add(&trafficStore); err != nil {
+		setupLog.Error(err, "Unable to setup traffic split store.")
+		os.Exit(1)
+	}
+
 	hasEdgeLabelPredicate := edge.HasEdgeSyncLabelPredicate(envs)
 
 	if err = (&edge.NamespaceReconciler{
@@ -153,6 +164,7 @@ func main() {
 		RemoteCluster: cluster,
 		ProxyImage:    proxyImage,
 		Envs:          envs,
+		Store:         &trafficStore,
 	}).SetupWithManager(mgr, hasEdgeLabelPredicate); err != nil {
 		setupLog.Error(err, "Unable to create controller.", "controller", "kservice")
 		os.Exit(1)
@@ -165,6 +177,16 @@ func main() {
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "Unable to set up ready check.")
+		os.Exit(1)
+	}
+
+	if err := mgr.Add(&workoffload.EdgeWorkOffload{
+		Client: mgr.GetClient(),
+		Envs:   envs,
+		Log:    mgr.GetLogger().WithName("edge-traffic"),
+		Store:  &trafficStore,
+	}); err != nil {
+		setupLog.Error(err, "Unable to set up edge traffic splitter.")
 		os.Exit(1)
 	}
 

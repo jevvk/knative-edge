@@ -8,13 +8,17 @@ import (
 	"github.com/go-logr/logr"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"edge.jevv.dev/pkg/controllers"
 	"edge.jevv.dev/pkg/controllers/edge/store"
@@ -96,6 +100,26 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return r.mirror.Reconcile(ctx, req)
 }
 
+func (r *KServiceReconciler) findServiceFromConfiguration(obj client.Object) []reconcile.Request {
+	var ok bool
+	var configuration *servingv1.Configuration
+
+	if configuration, ok = obj.(*servingv1.Configuration); !ok {
+		return []reconcile.Request{}
+	}
+
+	serviceName := getServiceNameFromConfiguration(configuration)
+
+	return []reconcile.Request{
+		{
+			NamespacedName: types.NamespacedName{
+				Name:      serviceName,
+				Namespace: configuration.Namespace,
+			},
+		},
+	}
+}
+
 func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...predicate.Predicate) error {
 	if r.Store == nil {
 		return fmt.Errorf("no traffic split store provided")
@@ -114,10 +138,11 @@ func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...pr
 	}
 
 	return r.mirror.NewControllerManagedBy(mgr, predicates...).
-		Owns(
-			&servingv1.Configuration{},
+		Watches(
+			&source.Kind{Type: &servingv1.Configuration{}},
+			handler.EnqueueRequestsFromMapFunc(r.findServiceFromConfiguration),
 			builder.WithPredicates(
-				LatestReadyRevisionChangedControllers{},
+				LatestReadyRevisionChangedPredicate{},
 				predicate.NewPredicateFuncs(isEdgeProxyConfiguration),
 			),
 		).

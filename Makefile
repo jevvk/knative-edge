@@ -6,6 +6,7 @@ IMG ?= ko://${PKG}
 REPO ?= kind.local
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
+PKG_VERSION ?= 1.0.0a1
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -99,8 +100,17 @@ e2e-test: manifests generate fmt vet envtest kustomize ## Run e2e tests.
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
-	KO_DOCKER_REPO=${REPO} ko build ${PKG}
+build: generate fmt vet kustomize ## Build, push, and generate release YAML files.
+	mkdir -p build/release
+	rm -rf build/release/*
+
+	$(KUSTOMIZE) build config/default/cloud \
+		| KO_DOCKER_REPO=$(REPO) ko resolve -B --platform linux/amd64,linux/arm64,linux/arm -f - \
+		> build/release/knative-edge-$(PKG_VERSION)-cloud-deployment.yaml
+	
+	$(KUSTOMIZE) build config/default/edge \
+		| KO_DOCKER_REPO=$(REPO) ko resolve -B --platform linux/amd64,linux/arm64,linux/arm -f - \
+		> build/release/knative-edge-$(PKG_VERSION)-edge-deployment.yaml
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

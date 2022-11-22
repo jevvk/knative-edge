@@ -182,6 +182,7 @@ func (r *KServiceReconciler) buildConfiguration(namespacedName types.NamespacedN
 	container.Image = r.ProxyImage
 	container.Env = []corev1.EnvVar{
 		{Name: "REMOTE_URL", Value: serviceAnnotations[controllers.RemoteUrlAnnotation]},
+		{Name: "REMOTE_HOST", Value: serviceAnnotations[controllers.RemoteHostAnnotation]},
 		{Name: "HTTP_PROXY", Value: os.Getenv("HTTP_PROXY")},
 		{Name: "HTTPS_PROXY", Value: os.Getenv("HTTPS_PROXY")},
 		{Name: "NO_PROXY", Value: os.Getenv("NO_PROXY")},

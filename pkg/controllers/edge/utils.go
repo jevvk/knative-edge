@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	nameSuffix = "-edge-compute-offload"
-	tagPreffix = "edge-compute-offload-"
+	nameSuffix = "-edge-proxy"
+	tagPreffix = "edge-proxy-"
 )
 
-func isComputeOffloadRevision(object client.Object) bool {
+func isEdgeProxyConfiguration(object client.Object) bool {
 	if object == nil {
 		return false
 	}
@@ -22,14 +22,14 @@ func isComputeOffloadRevision(object client.Object) bool {
 	return strings.HasSuffix(object.GetName(), nameSuffix)
 }
 
-func getRevisionNamespacedName(namespacedName types.NamespacedName) types.NamespacedName {
+func getConfigurationNamespacedName(namespacedName types.NamespacedName) types.NamespacedName {
 	return types.NamespacedName{
 		Name:      namespacedName.Name + nameSuffix,
 		Namespace: namespacedName.Namespace,
 	}
 }
 
-func getComputeOffloadTarget(service *servingv1.Service) *servingv1.TrafficTarget {
+func getEdgeProxyTarget(service *servingv1.Service) *servingv1.TrafficTarget {
 	if service == nil {
 		return nil
 	}
@@ -41,6 +41,28 @@ func getComputeOffloadTarget(service *servingv1.Service) *servingv1.TrafficTarge
 	}
 
 	return nil
+}
+
+func removeEdgeProxyTarget(service *servingv1.Service) bool {
+	if service == nil {
+		return false
+	}
+
+	hasEdgeProxyTarget := false
+	traffic := make([]servingv1.TrafficTarget, 0, len(service.Spec.Traffic))
+
+	for _, target := range service.Spec.Traffic {
+		if strings.HasPrefix(target.Tag, tagPreffix) {
+			hasEdgeProxyTarget = true
+			continue
+		}
+
+		traffic = append(traffic, target)
+	}
+
+	service.Spec.Traffic = traffic
+
+	return hasEdgeProxyTarget
 }
 
 func getLatestRevisionTarget(service *servingv1.Service) *servingv1.TrafficTarget {
@@ -57,20 +79,27 @@ func getLatestRevisionTarget(service *servingv1.Service) *servingv1.TrafficTarge
 	return nil
 }
 
-func getRevisionGenerationFromTarget(target *servingv1.TrafficTarget) string {
+func getConfigurationGenerationFromTarget(target *servingv1.TrafficTarget) string {
 	if target == nil {
 		return ""
 	}
 
-	return strings.TrimPrefix(target.Tag, tagPreffix)
+	generation := strings.TrimPrefix(target.Tag, tagPreffix)
+	generation = strings.TrimPrefix("0", generation)
+
+	return generation
 }
 
-func getTargetTagFromRevision(revision *servingv1.Revision) string {
+func getTargetNameFromConfiguration(configuration *servingv1.Configuration) string {
+	return configuration.Status.LatestReadyRevisionName
+}
+
+func getTargetTagFromConfiguration(configuration *servingv1.Configuration) string {
 	generation := -1
 
-	if revision != nil {
-		generation = int(revision.GetGeneration())
+	if configuration != nil {
+		generation = int(configuration.GetGeneration())
 	}
 
-	return fmt.Sprintf("%s%d", tagPreffix, generation)
+	return fmt.Sprintf("%s%05d", tagPreffix, generation)
 }

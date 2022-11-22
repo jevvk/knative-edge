@@ -49,6 +49,10 @@ spec:
           spec:
             description: KnativeEdgeSpec defines the desired state of KnativeEdge
             properties:
+              clusterHostnameOrIp:
+                description: The hostname or ip of the cluster. This is used in order
+                  to forward requests to the remote cluster
+                type: string
               clusterName:
                 description: The name of the Edge Cluster. This is used for retrieving
                   EdgeCluster from the remote cluster.
@@ -58,6 +62,45 @@ spec:
                 description: Override the proxy image for forwarding edge requests
                   to the cloud.
                 type: string
+              prometheus:
+                description: Details of the Prometheus instance
+                properties:
+                  password:
+                    description: Optional password for basic authentication
+                    type: string
+                  url:
+                    description: The in-cluster url of the Prometheus instance
+                    type: string
+                  userAndPasswordSecretRef:
+                    description: Optional secret containing username and password
+                      for basic authentication
+                    properties:
+                      name:
+                        description: name is unique within a namespace to reference
+                          a secret resource.
+                        type: string
+                      namespace:
+                        description: namespace defines the space within which the
+                          secret name must be unique.
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  username:
+                    description: Optional username for basic authentication
+                    type: string
+                required:
+                - url
+                type: object
+              proxy:
+                description: HTTP proxy definition
+                properties:
+                  httpProxy:
+                    type: string
+                  httpsProxy:
+                    type: string
+                  noProxy:
+                    type: string
+                type: object
               secretRef:
                 description: The secret containing the kubeconfig to the remote cluster.
                 properties:
@@ -71,6 +114,8 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+            required:
+            - clusterHostnameOrIp
             type: object
           status:
             description: KnativeEdgeStatus defines the observed state of KnativeEdge

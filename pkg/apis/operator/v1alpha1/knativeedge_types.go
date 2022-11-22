@@ -26,6 +26,8 @@ type KnativeEdgeSpec struct {
 	// The name of the Edge Cluster. This is used for retrieving EdgeCluster from the remote cluster.
 	// +kubebuilder:validation:MinLength:=3
 	ClusterName string `json:"clusterName,omitempty"`
+	// The hostname or ip of the cluster. This is used in order to forward requests to the remote cluster
+	ClusterHostnameOrIp string `json:"clusterHostnameOrIp"`
 	// Override the proxy image for forwarding edge requests to the cloud.
 	// +optional
 	OverrideProxyImage string `json:"overrideProxyImage,omitempty"`
@@ -33,6 +35,36 @@ type KnativeEdgeSpec struct {
 	// The secret containing the kubeconfig to the remote cluster.
 	// +optional
 	SecretRef *corev1.SecretReference `json:"secretRef,omitempty"`
+
+	// HTTP proxy definition
+	// +optional
+	Proxy KnativeEdgeProxy `json:"proxy,omitempty"`
+
+	// Details of the Prometheus instance
+	Prometheus *KnativeEdgePrometheus `json:"prometheus,omitempty"`
+}
+
+type KnativeEdgeProxy struct {
+	// +optional
+	HttpProxy string `json:"httpProxy,omitempty"`
+	// +optional
+	HttpsProxy string `json:"httpsProxy,omitempty"`
+	// +optional
+	NoProxy string `json:"noProxy,omitempty"`
+}
+
+type KnativeEdgePrometheus struct {
+	// The in-cluster url of the Prometheus instance
+	URL string `json:"url"`
+	// Optional username for basic authentication
+	// +optional
+	User *string `json:"username"`
+	// Optional password for basic authentication
+	// +optional
+	Password *string `json:"password"`
+	// Optional secret containing username and password for basic authentication
+	// +optional
+	UserAndPasswordSecretRef *corev1.SecretReference `json:"userAndPasswordSecretRef,omitempty"`
 }
 
 // KnativeEdgeStatus defines the observed state of KnativeEdge

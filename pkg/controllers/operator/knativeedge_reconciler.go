@@ -252,7 +252,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1al
 	if !shouldCreate && !shouldDelete {
 		shouldUpdate =
 			secret.Annotations == nil ||
-				secret.Annotations[controllers.ObserverGenerationAnnotation] != fmt.Sprint(refSecret.Generation)
+				secret.Annotations[controllers.ObservedGenerationAnnotation] != fmt.Sprint(refSecret.Generation)
 	}
 
 	if shouldCreate {
@@ -456,7 +456,7 @@ func (r *EdgeReconciler) buildSecret(namespacedName types.NamespacedName, edge *
 	dst.Namespace = namespacedName.Namespace
 
 	dst.Labels = getLabels(namespacedName)
-	dst.Annotations[controllers.ObserverGenerationAnnotation] = fmt.Sprint(src.GetGeneration())
+	dst.Annotations[controllers.ObservedGenerationAnnotation] = fmt.Sprint(src.GetGeneration())
 
 	dst.Data = src.Data
 
@@ -466,6 +466,8 @@ func (r *EdgeReconciler) buildSecret(namespacedName types.NamespacedName, edge *
 func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName types.NamespacedName, edge *operatorv1alpha1.KnativeEdge, edgeCluster *edgev1alpha1.EdgeCluster, deployment *appsv1.Deployment) {
 	replicas := int32(1)
 	labels := getLabels(namespacedName)
+
+	labels[controllers.EdgeTagLabel] = "TODO"
 
 	proxyImage := r.ProxyImage
 	if edge.Spec.OverrideProxyImage != "" {
@@ -508,6 +510,28 @@ func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName ty
 								Name:      "edgeconfig",
 								MountPath: edgecontrollers.ConfigPath,
 								ReadOnly:  true,
+							},
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "EDGE_DEPLOYMENT_TAG",
+								Value: labels[controllers.EdgeTagLabel],
+							},
+							{
+								Name:  "PROMETHEUS_URL",
+								Value: edge.Spec.Prometheus.URL,
+							},
+							{
+								Name:  "HTTP_PROXY",
+								Value: edge.Spec.Proxy.HttpProxy,
+							},
+							{
+								Name:  "HTTPS_PROXY",
+								Value: edge.Spec.Proxy.HttpsProxy,
+							},
+							{
+								Name:  "NO_PROXY",
+								Value: edge.Spec.Proxy.NoProxy,
 							},
 						},
 					},

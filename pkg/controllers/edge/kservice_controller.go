@@ -2,6 +2,7 @@ package edge
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -16,12 +17,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"edge.jevv.dev/pkg/controllers"
+	"edge.jevv.dev/pkg/controllers/edge/store"
 
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
 //+kubebuilder:rbac:groups=serving.knative.dev,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=serving.knative.dev,resources=revisions,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=serving.knative.dev,resources=configurations,verbs=get;list;watch;create;update;patch;delete
 
 type KServiceReconciler struct {
 	client.Client
@@ -33,17 +36,18 @@ type KServiceReconciler struct {
 
 	ProxyImage string
 	Envs       []string
+	Store      *store.Store
 
 	mirror *MirroringReconciler[*servingv1.Service]
 }
 
-func kServiceHasComputeOffloadAnnotation(service *servingv1.Service) bool {
+func kServiceHasComputeOffloadLabel(service *servingv1.Service) bool {
 	if service == nil {
 		return false
 	}
 
-	if annotations := service.GetAnnotations(); annotations != nil {
-		value, exists := annotations[controllers.OffloadToRemoteAnnotation]
+	if labels := service.Labels; labels != nil {
+		value, exists := labels[controllers.EdgeOffloadLabel]
 
 		return exists && strings.ToLower(value) == "true"
 	}
@@ -68,9 +72,25 @@ func (r *KServiceReconciler) kindMerger(src, dst *servingv1.Service) error {
 
 	dst.Name = src.Name
 	dst.Namespace = src.Namespace
-	dst.Annotations = src.Annotations
 	dst.Labels = src.Labels
-	dst.Spec = src.Spec
+	dst.Spec.ConfigurationSpec = src.Spec.ConfigurationSpec
+
+	annotations := dst.Annotations
+
+	if annotations == nil {
+		annotations = make(map[string]string)
+		dst.Annotations = annotations
+	}
+
+	if src.Status.URL != nil {
+		url := src.Status.URL.String()
+
+		if !strings.HasSuffix(url, "/") {
+			url += "/"
+		}
+
+		annotations[controllers.RemoteUrlAnnotation] = url
+	}
 
 	return nil
 }
@@ -80,6 +100,10 @@ func (r *KServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...predicate.Predicate) error {
+	if r.Store == nil {
+		return fmt.Errorf("no traffic split store provided")
+	}
+
 	r.mirror = &MirroringReconciler[*servingv1.Service]{
 		Log:               r.Log.WithName("mirror"),
 		Client:            r.Client,
@@ -89,15 +113,15 @@ func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...pr
 		Envs:              r.Envs,
 		KindGenerator:     r.kindGenerator,
 		KindMerger:        r.kindMerger,
-		KindPreProcessors: &[]kindPreProcessor[*servingv1.Service]{r.reconcileKRevision, r.reconcileKService},
+		KindPreProcessors: &[]kindPreProcessor[*servingv1.Service]{r.reconcileKConfiguration, r.reconcileKService},
 	}
 
 	return r.mirror.NewControllerManagedBy(mgr, predicates...).
 		Owns(
-			&servingv1.Revision{},
+			&servingv1.Configuration{},
 			builder.WithPredicates(
 				predicate.GenerationChangedPredicate{},
-				predicate.NewPredicateFuncs(isComputeOffloadRevision),
+				predicate.NewPredicateFuncs(isEdgeProxyConfiguration),
 			),
 		).
 		Complete(r)

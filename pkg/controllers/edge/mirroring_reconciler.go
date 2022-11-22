@@ -49,12 +49,14 @@ type kindPreProcessorResult struct {
 func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Log.V(1).Info("Started reconciling remote and local cluster.", "resource", req.NamespacedName.String())
 
+	result := ctrl.Result{}
+
 	if r.Client == nil {
-		return ctrl.Result{}, fmt.Errorf("no local kube client")
+		return result, fmt.Errorf("no local kube client")
 	}
 
 	if r.RemoteCluster.GetClient() == nil {
-		return ctrl.Result{}, fmt.Errorf("no remote kube client")
+		return result, fmt.Errorf("no remote kube client")
 	}
 
 	localKind, remoteKind := r.KindGenerator(), r.KindGenerator()
@@ -67,17 +69,21 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		if apierrors.IsNotFound(err) {
 			shouldDelete = true
 		} else {
-			return ctrl.Result{}, err
+			return result, err
 		}
 	}
 
 	if err := r.Get(ctx, req.NamespacedName, localKind); err != nil {
-		if apierrors.IsNotFound(err) {
-			shouldCreate = !shouldDelete
-			shouldDelete = false // can't delete something that doesn't exist
-		} else {
-			return ctrl.Result{}, err
+		if !apierrors.IsNotFound(err) {
+			return result, err
 		}
+
+		// exit early if both local and remote kind don't exist
+		if shouldDelete {
+			return result, nil
+		}
+
+		shouldCreate = true
 	} else if !shouldDelete && IsManagedObject(localKind) && !HasEdgeSyncLabel(remoteKind, r.Envs) {
 		// delete is edge sync label no longer valid (e.g. if envs change)
 		shouldDelete = true
@@ -103,10 +109,18 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			for _, preprocessor := range *r.KindPreProcessors {
 				res := preprocessor(ctx, localKind)
 
+				r.Log.V(controllers.DebugLevel).Info("preprocessor", "resource", req.NamespacedName.String(), "result", res)
+
 				shouldUpdate = shouldUpdate || res.ShouldUpdate
 
-				if res.Err != nil || res.Result.Requeue || res.Result.RequeueAfter > 0 {
+				if res.Err != nil {
 					return res.Result, res.Err
+				}
+
+				result.Requeue = result.Requeue || res.Result.Requeue
+
+				if res.Result.RequeueAfter > result.RequeueAfter {
+					result.RequeueAfter = res.Result.RequeueAfter
 				}
 			}
 		}
@@ -116,8 +130,10 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		controllers.UpdateLabels(localKind)
 	}
 
-	r.Log.V(3).Info("debug kind", "resource", req.NamespacedName.String(), "localKind", localKind, "remoteKind", remoteKind)
-	r.Log.V(3).Info("debug bool", "resource", req.NamespacedName.String(), "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
+	// r.Log.V(controllers.debugLevel).Info("debug remote kind", "resource", req.NamespacedName.String(), "remoteKind", remoteKind)
+	// r.Log.V(controllers.debugLevel).Info("debug local kind", "resource", req.NamespacedName.String(), "localKind", localKind)
+	r.Log.V(controllers.DebugLevel).Info("debug result", "resource", req.NamespacedName.String(), "result", result)
+	r.Log.V(controllers.DebugLevel).Info("debug bool", "resource", req.NamespacedName.String(), "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
 
 	if shouldCreate {
 		r.Log.V(1).Info("Creating local resource.", "name", req.NamespacedName.String())
@@ -126,16 +142,16 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 				return ctrl.Result{Requeue: true}, nil
 			}
 
-			return ctrl.Result{}, err
+			return result, err
 		}
 	} else if shouldDelete {
 		r.Log.V(1).Info("Deleting local resource.", "name", req.NamespacedName.String())
 		if err := r.Delete(ctx, localKind); err != nil {
 			if apierrors.IsNotFound(err) {
-				return ctrl.Result{}, nil
+				return result, nil
 			}
 
-			return ctrl.Result{}, err
+			return result, err
 		}
 	} else if shouldUpdate {
 		r.Log.V(1).Info("Updating local resource.", "name", req.NamespacedName.String())
@@ -144,11 +160,11 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 				return ctrl.Result{Requeue: true}, nil
 			}
 
-			return ctrl.Result{}, err
+			return result, err
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return result, nil
 }
 
 func (r *MirroringReconciler[T]) NewControllerManagedBy(mgr ctrl.Manager, predicates ...predicate.Predicate) *builder.Builder {

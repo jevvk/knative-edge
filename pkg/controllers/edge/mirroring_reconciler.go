@@ -3,6 +3,7 @@ package edge
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 
@@ -23,7 +24,7 @@ import (
 
 type kindGenerator[T client.Object] func() T
 type kindMerger[T client.Object] func(src, dst T) error
-type kindPreProcessor[T client.Object] func(ctx context.Context, kind T) kindPreProcessorResult
+type kindPreProcessor[T client.Object] func(ctx context.Context, kind T) (ctrl.Result, error)
 
 type MirroringReconciler[T client.Object] struct {
 	client.Client
@@ -38,12 +39,6 @@ type MirroringReconciler[T client.Object] struct {
 	KindPreProcessors *[]kindPreProcessor[T]
 
 	Envs []string
-}
-
-type kindPreProcessorResult struct {
-	Result       ctrl.Result
-	Err          error
-	ShouldUpdate bool
 }
 
 func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -89,6 +84,18 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		shouldDelete = true
 	}
 
+	// make a copy to compare after the changes
+	localKindCopy, ok := localKind.DeepCopyObject().(T)
+
+	if !ok {
+		// this shouldn't happen, ever
+		err := fmt.Errorf("cannot cast copy of localKind")
+		r.Log.Error(err, "Error occured while copying localKind", "kind", localKind.GetObjectKind())
+
+		// shouldUpdate becomes useless if this happens, but at least we don't break the control loop
+		localKindCopy = localKind
+	}
+
 	if !shouldDelete {
 		kindAnnotations := localKind.GetAnnotations()
 
@@ -103,31 +110,36 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			shouldUpdate = lastRemoteGenerationExists
 		}
 
-		r.KindMerger(remoteKind, localKind)
+		r.KindMerger(remoteKind, localKindCopy)
 
 		if r.KindPreProcessors != nil {
 			for _, preprocessor := range *r.KindPreProcessors {
-				res := preprocessor(ctx, localKind)
+				res, err := preprocessor(ctx, localKindCopy)
 
 				r.Log.V(controllers.DebugLevel).Info("preprocessor", "resource", req.NamespacedName.String(), "result", res)
 
-				shouldUpdate = shouldUpdate || res.ShouldUpdate
-
-				if res.Err != nil {
-					return res.Result, res.Err
+				if err != nil {
+					return res, err
 				}
 
-				result.Requeue = result.Requeue || res.Result.Requeue
+				result.Requeue = result.Requeue || res.Requeue
 
-				if res.Result.RequeueAfter > result.RequeueAfter {
-					result.RequeueAfter = res.Result.RequeueAfter
+				if res.RequeueAfter > 0 && (res.RequeueAfter < result.RequeueAfter || result.RequeueAfter == 0) {
+					result.RequeueAfter = res.RequeueAfter
 				}
 			}
+
+			r.Log.V(controllers.DebugLevel).Info("preprocessor end", "resource", req.NamespacedName.String(), "result", result)
 		}
 
-		controllers.UpdateLastGenerationAnnotation(localKind)
-		controllers.UpdateLastRemoteGenerationAnnotation(localKind, remoteKind)
-		controllers.UpdateLabels(localKind)
+		controllers.UpdateLastRemoteGenerationAnnotation(localKindCopy, remoteKind)
+		controllers.UpdateLabels(localKindCopy)
+
+		shouldUpdate = shouldUpdate || !reflect.DeepEqual(localKind, localKindCopy)
+
+		// this will always make reflect.DeepEqual return false
+		// (at least while it's using resourceVersion, not generation)
+		controllers.UpdateLastGenerationAnnotation(localKindCopy)
 	}
 
 	// r.Log.V(controllers.debugLevel).Info("debug remote kind", "resource", req.NamespacedName.String(), "remoteKind", remoteKind)
@@ -137,7 +149,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 
 	if shouldCreate {
 		r.Log.V(1).Info("Creating local resource.", "name", req.NamespacedName.String())
-		if err := r.Create(ctx, localKind); err != nil {
+		if err := r.Create(ctx, localKindCopy); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil
 			}
@@ -146,7 +158,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	} else if shouldDelete {
 		r.Log.V(1).Info("Deleting local resource.", "name", req.NamespacedName.String())
-		if err := r.Delete(ctx, localKind); err != nil {
+		if err := r.Delete(ctx, localKindCopy); err != nil {
 			if apierrors.IsNotFound(err) {
 				return result, nil
 			}
@@ -155,7 +167,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	} else if shouldUpdate {
 		r.Log.V(1).Info("Updating local resource.", "name", req.NamespacedName.String())
-		if err := r.Update(ctx, localKind); err != nil {
+		if err := r.Update(ctx, localKindCopy); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil
 			}

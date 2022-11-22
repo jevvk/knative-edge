@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -41,13 +42,16 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	remoteReq := r.Clone(ctx)
-	remoteReq.URL.Host = remoteURL.Host
+	remoteReq.RequestURI = "" // not sure why this has to be done
+	remoteReq.URL = remoteURL
 
 	remoteReq.Header.Del("Host")
 	remoteReq.Header.Add("Host", remoteHost)
 	remoteReq.Header.Add("X-Forwarded-For", r.RemoteAddr)
 	remoteReq.Header.Add("X-Forwarded-Host", r.Host)
 	remoteReq.Header.Add("X-Forwarded-Proto", r.Proto)
+
+	remoteReq.Host = remoteHost
 
 	if proxyURL, _ := http.ProxyFromEnvironment(remoteReq); proxyURL != nil {
 		remoteReq.URL = proxyURL
@@ -61,9 +65,28 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, context.DeadlineExceeded) {
 			http.Error(w, "bad gateway: couldn't proxy to remote", http.StatusBadGateway)
 		} else {
-			http.Error(w, "gateway timeout", http.StatusGatewayTimeout)
+			http.Error(w, fmt.Sprintf("gateway error: %s", err), http.StatusBadGateway)
 		}
-	} else if err := res.Write(w); err != nil {
+
+		return
+	}
+
+	headers := w.Header()
+
+	headers.Add("x-knative-edge-proxy-host", remoteHost)
+	headers.Add("x-knative-edge-proxy", "true")
+	headers.Add("x-knative-edge-proxy-url", remoteURL.String())
+
+	for header, values := range res.Header {
+		for _, value := range values {
+			headers.Add(header, value)
+		}
+	}
+
+	w.WriteHeader(res.StatusCode)
+	defer res.Body.Close()
+
+	if _, err := io.Copy(w, res.Body); err != nil {
 		fmt.Printf("[%s %s] Error: couldn't write response for: %s", r.Method, r.URL.Path, err)
 	}
 }

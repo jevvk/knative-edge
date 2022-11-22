@@ -117,7 +117,7 @@ func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...pr
 		Owns(
 			&servingv1.Configuration{},
 			builder.WithPredicates(
-				predicate.GenerationChangedPredicate{},
+				LatestReadyRevisionChangedControllers{},
 				predicate.NewPredicateFuncs(isEdgeProxyConfiguration),
 			),
 		).

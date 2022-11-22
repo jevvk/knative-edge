@@ -2,7 +2,6 @@ package edge
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"edge.jevv.dev/pkg/controllers"
@@ -14,19 +13,17 @@ import (
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *servingv1.Service) kindPreProcessorResult {
+func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *servingv1.Service) (ctrl.Result, error) {
 	logger := r.Log.V(controllers.DebugLevel).WithName("service")
 
 	if service == nil {
-		return kindPreProcessorResult{}
+		return ctrl.Result{}, nil
 	}
 
 	configuration := &servingv1.Configuration{}
 
 	serviceNamespacedName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
 	configurationNamespacedName := getConfigurationNamespacedName(serviceNamespacedName)
-
-	shouldUpdate := false
 
 	if !kServiceHasComputeOffloadLabel(service) {
 		// if the service doesn't have an annotation, it can mean 2 things
@@ -35,24 +32,24 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 
 		if err := r.Get(ctx, configurationNamespacedName, configuration); err != nil {
 			if !apierrors.IsNotFound(err) {
-				return kindPreProcessorResult{Err: err}
+				return ctrl.Result{}, err
 			}
 		} else if err := r.Delete(ctx, configuration); err != nil {
 			// requeue on conflict
 			if apierrors.IsConflict(err) {
-				return kindPreProcessorResult{Result: ctrl.Result{Requeue: true}}
+				return ctrl.Result{Requeue: true}, nil
 			}
 
 			// check if something else deleted the configuration
 			if !apierrors.IsNotFound(err) {
-				return kindPreProcessorResult{Err: err}
+				return ctrl.Result{}, err
 			}
 		}
 
 		// delete target if exists
-		shouldUpdate := removeEdgeProxyTarget(service)
+		removeEdgeProxyTarget(service)
 
-		return kindPreProcessorResult{ShouldUpdate: shouldUpdate}
+		return ctrl.Result{}, nil
 	}
 
 	logger.Info("compute offload enabled", "name", configurationNamespacedName)
@@ -64,25 +61,25 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		trafficSplit = 0
 	}
 
+	traffic := make([]servingv1.TrafficTarget, 0, 1)
+
 	// ensure latest target is specified
+	if target := getLatestRevisionTarget(service); target != nil {
+		var percent int64 = 100 - trafficSplit
+		target.Percent = &percent
 
-	if service.Spec.Traffic == nil {
-		service.Spec.Traffic = make([]servingv1.TrafficTarget, 0)
-		shouldUpdate = true
-	}
-
-	if target := getLatestRevisionTarget(service); target == nil {
+		traffic = append(traffic, *target)
+	} else {
 		var percent int64 = 100 - trafficSplit
 		var latestRevision bool = true
 
-		service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
+		traffic = append(traffic, servingv1.TrafficTarget{
 			LatestRevision: &latestRevision,
 			Percent:        &percent,
 		})
-
-		shouldUpdate = true
 	}
 
+	// ensure edge proxy target is specified
 	if target := getEdgeProxyTarget(service); target != nil {
 		// if the target already exists, check if we need to change the tag
 
@@ -93,30 +90,19 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 			// requeue after some time
 			if apierrors.IsNotFound(err) {
 				logger.Info("edge proxy revision not found", "name", configurationNamespacedName)
-				return kindPreProcessorResult{Result: ctrl.Result{RequeueAfter: 5 * time.Second}}
+				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
 
-			return kindPreProcessorResult{}
+			return ctrl.Result{}, err
 		}
 
-		// early exit if generation is the same
-		if fmt.Sprint(configuration.GetGeneration()) == getConfigurationGenerationFromTarget(target) {
-			return kindPreProcessorResult{}
-		}
+		logger.Info("debug edge proxy revision", "revision", getTargetNameFromConfiguration(configuration))
 
-		// finally, update the target
+		target.RevisionName = getTargetNameFromConfiguration(configuration)
+		target.Tag = getTargetTagFromConfiguration(configuration)
+		target.Percent = &trafficSplit
 
-		targetTag := getTargetTagFromConfiguration(configuration)
-
-		if target.Tag != targetTag {
-			target.Tag = targetTag
-			shouldUpdate = true
-		}
-
-		if target.Percent == nil || *target.Percent != trafficSplit {
-			target.Percent = &trafficSplit
-			shouldUpdate = true
-		}
+		traffic = append(traffic, *target)
 	} else {
 		// if target revision exists, change the spec
 		// this is because we need to change the service if the service
@@ -126,35 +112,38 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		if err := r.Get(ctx, configurationNamespacedName, configuration); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger.Info("edge proxy revision not found", "name", configurationNamespacedName)
-				return kindPreProcessorResult{Result: ctrl.Result{RequeueAfter: 5 * time.Second}}
+				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
 
-			return kindPreProcessorResult{Err: err}
+			return ctrl.Result{}, err
 		}
 
 		// we know the revision exists but the revision isn't set in the service,
 		// so we add it as a traffic target
 
+		logger.Info("debug edge proxy revision", "revision", getTargetNameFromConfiguration(configuration))
+
 		revisionName := getTargetNameFromConfiguration(configuration)
 
 		if revisionName == "" {
 			// not ready yet, try again later
-			return kindPreProcessorResult{Result: ctrl.Result{RequeueAfter: time.Second}}
+			logger.Info("edge proxy revision not ready", "name", configurationNamespacedName)
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 
-		service.Spec.Traffic = append(service.Spec.Traffic, servingv1.TrafficTarget{
+		traffic = append(traffic, servingv1.TrafficTarget{
 			RevisionName: revisionName,
 			Tag:          getTargetTagFromConfiguration(configuration),
 			Percent:      &trafficSplit,
 		})
-
-		shouldUpdate = true
 	}
 
+	// finally, update traffic
+	service.Spec.Traffic = traffic
+
 	// logger.Info("debug service", "service", service)
-	logger.Info("reconciler end", "name", serviceNamespacedName, "shouldUpdate", shouldUpdate)
 
 	// requeue every 5 minutes to update the traffic split
-	return kindPreProcessorResult{ShouldUpdate: shouldUpdate, Result: ctrl.Result{RequeueAfter: time.Minute}}
-	// return kindPreProcessorResult{ShouldUpdate: shouldUpdate, Result: ctrl.Result{RequeueAfter: time.Minute * 5}}
+	return ctrl.Result{RequeueAfter: time.Minute}, nil
+	// return ctrl.Result{RequeueAfter: time.Minute * 5}, nil
 }

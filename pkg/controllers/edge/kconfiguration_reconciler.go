@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,38 +22,40 @@ import (
 
 // TODO: this should create configurations, not configurations
 
-func (r *KServiceReconciler) reconcileKConfiguration(ctx context.Context, service *servingv1.Service) kindPreProcessorResult {
+func (r *KServiceReconciler) reconcileKConfiguration(ctx context.Context, service *servingv1.Service) (ctrl.Result, error) {
 	if service == nil {
 		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("no service")
-		return kindPreProcessorResult{}
+		return ctrl.Result{}, nil
 	}
 
 	if service.ResourceVersion == "" {
 		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("no local service")
-		return kindPreProcessorResult{Result: ctrl.Result{RequeueAfter: time.Second}}
+		return ctrl.Result{RequeueAfter: time.Second}, nil
 	}
 
 	shouldCreate := false
 	shouldUpdate := false
 	shouldDelete := false
 
-	configuration := &servingv1.Configuration{}
+	localConfiguration := &servingv1.Configuration{}
 
 	serviceNamespacedName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
 	configurationNamespacedName := getConfigurationNamespacedName(serviceNamespacedName)
 
-	if err := r.Get(ctx, configurationNamespacedName, configuration); err != nil {
+	if err := r.Get(ctx, configurationNamespacedName, localConfiguration); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return kindPreProcessorResult{Err: err}
+			return ctrl.Result{}, err
 		}
 
 		shouldCreate = true
 	}
 
+	configuration := localConfiguration.DeepCopy()
+
 	if !kServiceHasComputeOffloadLabel(service) {
 		if shouldCreate {
 			// doesn't exist and doesn't need to exist, can exit early
-			return kindPreProcessorResult{}
+			return ctrl.Result{}, nil
 		}
 
 		shouldDelete = true
@@ -67,8 +70,16 @@ func (r *KServiceReconciler) reconcileKConfiguration(ctx context.Context, servic
 	}
 
 	// TODO: check if we should update
-	if !shouldCreate && !shouldDelete {
-		shouldUpdate = fmt.Sprint(service.Generation) != annotations[controllers.LastGenerationAnnotation]
+	if !shouldDelete {
+		r.buildConfiguration(configurationNamespacedName, configuration, service)
+
+		shouldUpdate = !reflect.DeepEqual(localConfiguration, configuration)
+
+		// do this after, otherwise we're stuck in infinite loop
+		controllers.UpdateLastRemoteGenerationAnnotation(configuration, service)
+
+		// don't actually wanna set as owner, otherwise it interferes with knative
+		// controllerutil.SetControllerReference(service, configuration, r.Scheme)
 	}
 
 	r.Log.V(controllers.DebugLevel).WithName("configuration").Info("debug  bool", "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
@@ -77,55 +88,43 @@ func (r *KServiceReconciler) reconcileKConfiguration(ctx context.Context, servic
 	if shouldCreate {
 		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("Creating edge proxy route.", "name", configurationNamespacedName)
 
-		r.buildConfiguration(configurationNamespacedName, configuration, service)
-
-		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("debug configuration", "configuration", configuration)
-
-		// don't actually wanna set as owner, otherwise it interferes with knative
-		// controllerutil.SetControllerReference(service, configuration, r.Scheme)
-
-		// r.Log.V(controllers.debugLevel).WithName("configuration").Info("debug kind", "configuration", configuration)
-
 		if err := r.Create(ctx, configuration); err != nil {
 			if apierrors.IsConflict(err) {
-				return kindPreProcessorResult{Result: ctrl.Result{Requeue: true}}
+				return ctrl.Result{Requeue: true}, nil
 			}
 
 			r.Log.V(controllers.DebugLevel).WithName("configuration").Error(err, "couldn't create configuration")
 
-			return kindPreProcessorResult{Err: err}
+			return ctrl.Result{}, err
 		}
 	} else if shouldUpdate {
 		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("Updating edge proxy route.", "name", configurationNamespacedName)
 
-		r.buildConfiguration(configurationNamespacedName, configuration, service)
-
-		// don't actually wanna set as owner, otherwise it interferes with knative
-		// controllerutil.SetControllerReference(service, configuration, r.Scheme)
-		controllers.UpdateLastRemoteGenerationAnnotation(configuration, service)
-
-		// r.Log.V(controllers.debugLevel).WithName("configuration").Info("debug kind", "configuration", configuration)
-
 		if err := r.Update(ctx, configuration); err != nil {
 			if apierrors.IsConflict(err) {
-				return kindPreProcessorResult{Result: ctrl.Result{Requeue: true}}
+				return ctrl.Result{Requeue: true}, nil
 			}
 
-			return kindPreProcessorResult{Err: err}
+			return ctrl.Result{}, err
 		}
 	} else if shouldDelete {
 		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("Deleting edge proxy route.", "name", configurationNamespacedName)
 
 		if err := r.Delete(ctx, configuration); err != nil {
 			if apierrors.IsNotFound(err) {
-				return kindPreProcessorResult{}
+				return ctrl.Result{}, nil
 			}
 
-			return kindPreProcessorResult{Err: err}
+			return ctrl.Result{}, err
 		}
 	}
 
-	return kindPreProcessorResult{}
+	if shouldCreate || shouldUpdate {
+		// requeue after in order to update service
+		return ctrl.Result{RequeueAfter: time.Second}, nil
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *KServiceReconciler) buildConfiguration(namespacedName types.NamespacedName, configuration *servingv1.Configuration, service *servingv1.Service) {

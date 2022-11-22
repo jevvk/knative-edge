@@ -152,11 +152,11 @@ func HasEdgeSyncLabelPredicate(envs []string) predicate.Predicate {
 	}
 }
 
-type LatestReadyRevisionChangedControllers struct {
+type LatestReadyRevisionChangedPredicate struct {
 	predicate.Funcs
 }
 
-func (LatestReadyRevisionChangedControllers) Update(e event.UpdateEvent) bool {
+func (LatestReadyRevisionChangedPredicate) Update(e event.UpdateEvent) bool {
 	var ok bool
 	var oldConfiguration *servingv1.Configuration
 	var newConfiguration *servingv1.Configuration

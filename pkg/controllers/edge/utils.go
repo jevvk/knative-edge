@@ -29,6 +29,14 @@ func getConfigurationNamespacedName(namespacedName types.NamespacedName) types.N
 	}
 }
 
+func getServiceNameFromConfiguration(configuration *servingv1.Configuration) string {
+	if !strings.HasSuffix(configuration.Name, nameSuffix) {
+		return ""
+	}
+
+	return strings.TrimSuffix(configuration.Name, nameSuffix)
+}
+
 func getEdgeProxyTarget(service *servingv1.Service) *servingv1.TrafficTarget {
 	if service == nil {
 		return nil

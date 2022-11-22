@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	remoteURL *url.URL
-	timeout   time.Duration = time.Second * 30
+	remoteURL  *url.URL
+	remoteHost string
+	timeout    time.Duration = time.Second * 30
 )
 
 const (
@@ -25,11 +26,25 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	if remoteURL == nil {
+		w.Header().Add("Content-Type", "text/plain")
+		http.Error(w, "bad gateway: no remote url set", http.StatusBadGateway)
+
+		return
+	}
+
+	if remoteHost == "" {
+		w.Header().Add("Content-Type", "text/plain")
+		http.Error(w, "bad gateway: no remote host set", http.StatusBadGateway)
+
+		return
+	}
+
 	remoteReq := r.Clone(ctx)
 	remoteReq.URL.Host = remoteURL.Host
 
 	remoteReq.Header.Del("Host")
-	remoteReq.Header.Add("Host", remoteURL.Host)
+	remoteReq.Header.Add("Host", remoteHost)
 	remoteReq.Header.Add("X-Forwarded-For", r.RemoteAddr)
 	remoteReq.Header.Add("X-Forwarded-Host", r.Host)
 	remoteReq.Header.Add("X-Forwarded-Proto", r.Proto)
@@ -55,16 +70,15 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	remoteStr := os.Getenv("REMOTE_URL")
+	remoteHost = os.Getenv("REMOTE_HOST")
 
-	if remoteStr == "" {
-		panic(fmt.Errorf("cannot proxy to empty remote url"))
-	}
+	if remoteStr != "" {
+		var err error
+		remoteURL, err = url.Parse(remoteStr)
 
-	var err error
-	remoteURL, err = url.Parse(remoteStr)
-
-	if err != nil {
-		panic(fmt.Errorf("cannot parse remote url: %w", err))
+		if err != nil {
+			fmt.Printf("Error: cannot parse remote url: %s", err)
+		}
 	}
 
 	timeoutStr := os.Getenv("REMOTE_TIMEOUT")

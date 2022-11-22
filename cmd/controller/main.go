@@ -64,12 +64,15 @@ func main() {
 	var probeAddr string
 	var proxyImage string
 	var environments string
+	var remoteUrl string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 
 	flag.StringVar(&proxyImage, "proxy-image", "", "The image of the proxy component.")
 	flag.StringVar(&environments, "envs", "", "A list of comma separated list of environments. The edge cluster will only listen and propagate to these environments.")
+
+	flag.StringVar(&remoteUrl, "remote-url", "", "The url of the remote cluster.")
 
 	opts := zap.Options{
 		Development: true,
@@ -162,6 +165,7 @@ func main() {
 		Log:           mgr.GetLogger().WithName("kservice-controller"),
 		Recorder:      mgr.GetEventRecorderFor("kservice-controller"),
 		RemoteCluster: cluster,
+		RemoteUrl:     remoteUrl,
 		ProxyImage:    proxyImage,
 		Envs:          envs,
 		Store:         &trafficStore,

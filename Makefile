@@ -106,25 +106,35 @@ build: generate fmt vet kustomize ## Build, push, and generate release YAML file
 	rm -rf build/release/*
 
 	$(KUSTOMIZE) build config/default/cloud \
-		| KO_DOCKER_REPO=$(REPO) ko resolve -B --tag-only --tags latest --tags $(PKG_VERSION) --push=$(DEPLOY_BUILD) --platform linux/amd64,linux/arm64,linux/arm -f - \
+		| KO_DOCKER_REPO=$(REPO) ko resolve -B --tag-only --tags development \
+			--image-label "org.opencontainers.image.source=https://github.com/jevvk/knative-edge" \
+			--local \
+			--platform linux/amd64,linux/arm64,linux/arm -f - \
 		> build/release/knative-edge-$(PKG_VERSION)-cloud-deployment.yaml
 	
 	$(KUSTOMIZE) build config/default/edge \
-		| KO_DOCKER_REPO=$(REPO) ko resolve -B --tag-only --tags latest --tags $(PKG_VERSION) --push=$(DEPLOY_BUILD) --platform linux/amd64,linux/arm64,linux/arm -f - \
+		| KO_DOCKER_REPO=$(REPO) ko resolve -B --tag-only --tags development \
+			--image-label "org.opencontainers.image.source=https://github.com/jevvk/knative-edge" \
+			--local \
+			--platform linux/amd64,linux/arm64,linux/arm -f - \
 		> build/release/knative-edge-$(PKG_VERSION)-edge-deployment.yaml
 
-.PHONY: build-local
-build-local: generate fmt vet kustomize ## Build, push, and generate release YAML files.
-	mkdir -p build/release
-	rm -rf build/release/*
+.PHONY: build-deploy
+build-deploy: build ## Push containers to registry
+	docker tag ko.local/controller:development $(REPO)/controller:$(PKG_VERSION)
+	docker tag ko.local/controller:development $(REPO)/controller:latest
+	docker tag ko.local/operator:development $(REPO)/operator:$(PKG_VERSION)
+	docker tag ko.local/operator:development $(REPO)/operator:latest
+	docker tag ko.local/proxy:development $(REPO)/proxy:$(PKG_VERSION)
+	docker tag ko.local/proxy:development $(REPO)/proxy:latest
 
-	$(KUSTOMIZE) build config/default/cloud \
-		| ko resolve -L -B --platform linux/amd64,linux/arm64,linux/arm -f - \
-		> build/release/knative-edge-$(PKG_VERSION)-cloud-deployment-local.yaml
-	
-	$(KUSTOMIZE) build config/default/edge \
-		| ko resolve -L -B --platform linux/amd64,linux/arm64,linux/arm -f - \
-		> build/release/knative-edge-$(PKG_VERSION)-edge-deployment-local.yaml
+	docker push $(REPO)/controller:$(PKG_VERSION)
+	docker push $(REPO)/controller:latest
+	docker push $(REPO)/operator:$(PKG_VERSION)
+	docker push $(REPO)/operator:latest
+	docker push $(REPO)/proxy:$(PKG_VERSION)
+	docker push $(REPO)/proxy:latest
+
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

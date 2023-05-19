@@ -3,7 +3,6 @@ package edge
 import (
 	"context"
 	"fmt"
-	"os"
 	"reflect"
 	"time"
 
@@ -15,21 +14,32 @@ import (
 	// "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"edge.jevv.dev/pkg/controllers"
+	"edge.jevv.dev/pkg/controllers/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-// TODO: this should create configurations, not configurations
-
 func (r *KServiceReconciler) reconcileKConfiguration(ctx context.Context, service *servingv1.Service) (ctrl.Result, error) {
+	log := r.Log.WithName("configuration").V(controllers.InfoLevel)
+	debug := r.Log.WithName("configuration").V(controllers.DebugLevel)
+
 	if service == nil {
-		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("no service")
+		debug.Info("no service")
 		return ctrl.Result{}, nil
 	}
 
+	//////// debug controller time
+	start := time.Now()
+
+	defer func() {
+		end := time.Now()
+		debug.Info("debug reconcile loop", "durationMs", end.Sub(start).Milliseconds())
+	}()
+	/////// end debug controller time
+
 	if service.ResourceVersion == "" {
-		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("no local service")
+		debug.Info("no local service")
 		return ctrl.Result{RequeueAfter: time.Second}, nil
 	}
 
@@ -40,7 +50,7 @@ func (r *KServiceReconciler) reconcileKConfiguration(ctx context.Context, servic
 	localConfiguration := &servingv1.Configuration{}
 
 	serviceNamespacedName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
-	configurationNamespacedName := getConfigurationNamespacedName(serviceNamespacedName)
+	configurationNamespacedName := utils.GetConfigurationNamespacedName(serviceNamespacedName)
 
 	if err := r.Get(ctx, configurationNamespacedName, localConfiguration); err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -76,29 +86,29 @@ func (r *KServiceReconciler) reconcileKConfiguration(ctx context.Context, servic
 		shouldUpdate = !reflect.DeepEqual(localConfiguration, configuration)
 
 		// do this after, otherwise we're stuck in infinite loop
-		controllers.UpdateLastRemoteGenerationAnnotation(configuration, service)
+		utils.UpdateLastRemoteGenerationAnnotation(configuration, service)
 
 		// don't actually wanna set as owner, otherwise it interferes with knative
 		// controllerutil.SetControllerReference(service, configuration, r.Scheme)
 	}
 
-	r.Log.V(controllers.DebugLevel).WithName("configuration").Info("debug  bool", "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
-	r.Log.V(controllers.DebugLevel).WithName("configuration").Info("debug name", "configurationName", configurationNamespacedName)
+	debug.Info("debug bool", "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
+	debug.Info("debug name", "configurationName", configurationNamespacedName)
 
 	if shouldCreate {
-		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("Creating edge proxy route.", "name", configurationNamespacedName)
+		log.Info("Creating edge proxy route.", "name", configurationNamespacedName)
 
 		if err := r.Create(ctx, configuration); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil
 			}
 
-			r.Log.V(controllers.DebugLevel).WithName("configuration").Error(err, "couldn't create configuration")
+			debug.Error(err, "couldn't create configuration")
 
 			return ctrl.Result{}, err
 		}
 	} else if shouldUpdate {
-		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("Updating edge proxy route.", "name", configurationNamespacedName)
+		log.Info("Updating edge proxy route.", "name", configurationNamespacedName)
 
 		if err := r.Update(ctx, configuration); err != nil {
 			if apierrors.IsConflict(err) {
@@ -108,7 +118,7 @@ func (r *KServiceReconciler) reconcileKConfiguration(ctx context.Context, servic
 			return ctrl.Result{}, err
 		}
 	} else if shouldDelete {
-		r.Log.V(controllers.DebugLevel).WithName("configuration").Info("Deleting edge proxy route.", "name", configurationNamespacedName)
+		log.Info("Deleting edge proxy route.", "name", configurationNamespacedName)
 
 		if err := r.Delete(ctx, configuration); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -175,6 +185,9 @@ func (r *KServiceReconciler) buildConfiguration(namespacedName types.NamespacedN
 		configuration.Spec.Template.Spec.PodSpec.Containers = containers
 	}
 
+	var concurrency int64 = 8
+	configuration.Spec.Template.Spec.ContainerConcurrency = &concurrency
+
 	container := &containers[0]
 
 	// TODO: set concurrency and timeout
@@ -183,9 +196,29 @@ func (r *KServiceReconciler) buildConfiguration(namespacedName types.NamespacedN
 	container.Env = []corev1.EnvVar{
 		{Name: "REMOTE_URL", Value: serviceAnnotations[controllers.RemoteUrlAnnotation]},
 		{Name: "REMOTE_HOST", Value: serviceAnnotations[controllers.RemoteHostAnnotation]},
-		{Name: "HTTP_PROXY", Value: os.Getenv("HTTP_PROXY")},
-		{Name: "HTTPS_PROXY", Value: os.Getenv("HTTPS_PROXY")},
-		{Name: "NO_PROXY", Value: os.Getenv("NO_PROXY")},
+		{Name: "REMOTE_PROXY", Value: r.HttpProxy},
+		// {Name: "HTTP_PROXY", Value: r.HttpProxy},
+		// {Name: "HTTPS_PROXY", Value: r.HttpsProxy},
+		// {Name: "NO_PROXY", Value: r.NoProxy},
 	}
 
+	specLabels := configuration.Spec.Template.Labels
+
+	if specLabels == nil {
+		specLabels = make(map[string]string)
+		configuration.Spec.Template.Labels = specLabels
+	}
+
+	specLabels[controllers.EdgeLocalLabel] = "true"
+	specLabels[controllers.ManagedLabel] = "true"
+
+	// experiments
+	specAnnotations := configuration.Spec.Template.Annotations
+
+	if specAnnotations == nil {
+		specAnnotations = make(map[string]string)
+		configuration.Spec.Template.Annotations = specAnnotations
+	}
+
+	specAnnotations["autoscaling.knative.dev/min-scale"] = "2"
 }

@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"edge.jevv.dev/pkg/controllers"
+	"edge.jevv.dev/pkg/controllers/utils"
 )
 
 type kindGenerator[T client.Object] func() T
@@ -42,7 +43,10 @@ type MirroringReconciler[T client.Object] struct {
 }
 
 func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Log.V(1).Info("Started reconciling remote and local cluster.", "resource", req.NamespacedName.String())
+	debug := r.Log.V(controllers.DebugLevel)
+	log := r.Log.V(controllers.InfoLevel)
+
+	debug.Info("Started reconciling remote and local cluster.", "resource", req.NamespacedName.String())
 
 	result := ctrl.Result{}
 
@@ -116,7 +120,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			for _, preprocessor := range *r.KindPreProcessors {
 				res, err := preprocessor(ctx, localKindCopy)
 
-				r.Log.V(controllers.DebugLevel).Info("preprocessor", "resource", req.NamespacedName.String(), "result", res)
+				debug.Info("preprocessor", "resource", req.NamespacedName.String(), "result", res)
 
 				if err != nil {
 					return res, err
@@ -129,26 +133,31 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 				}
 			}
 
-			r.Log.V(controllers.DebugLevel).Info("preprocessor end", "resource", req.NamespacedName.String(), "result", result)
+			debug.Info("preprocessor end", "resource", req.NamespacedName.String(), "result", result)
 		}
 
-		controllers.UpdateLastRemoteGenerationAnnotation(localKindCopy, remoteKind)
-		controllers.UpdateLabels(localKindCopy)
+		utils.UpdateLastRemoteGenerationAnnotation(localKindCopy, remoteKind)
+		utils.UpdateLabels(localKindCopy)
 
 		shouldUpdate = shouldUpdate || !reflect.DeepEqual(localKind, localKindCopy)
 
+		// if shouldUpdate {
+		// 	debug.Info("debug local", "kind", localKind)
+		// 	debug.Info("debug copy", "kind", localKindCopy)
+		// }
+
 		// this will always make reflect.DeepEqual return false
 		// (at least while it's using resourceVersion, not generation)
-		controllers.UpdateLastGenerationAnnotation(localKindCopy)
+		utils.UpdateLastGenerationAnnotation(localKindCopy)
 	}
 
-	// r.Log.V(controllers.debugLevel).Info("debug remote kind", "resource", req.NamespacedName.String(), "remoteKind", remoteKind)
-	// r.Log.V(controllers.debugLevel).Info("debug local kind", "resource", req.NamespacedName.String(), "localKind", localKind)
-	r.Log.V(controllers.DebugLevel).Info("debug result", "resource", req.NamespacedName.String(), "result", result)
-	r.Log.V(controllers.DebugLevel).Info("debug bool", "resource", req.NamespacedName.String(), "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
+	// debug.Info("debug remote kind", "resource", req.NamespacedName.String(), "remoteKind", remoteKind)
+	// debug.Info("debug local kind", "resource", req.NamespacedName.String(), "localKind", localKind)
+	debug.Info("debug result", "resource", req.NamespacedName.String(), "result", result)
+	debug.Info("debug bool", "resource", req.NamespacedName.String(), "shouldCreate", shouldCreate, "shouldUpdate", shouldUpdate, "shouldDelete", shouldDelete)
 
 	if shouldCreate {
-		r.Log.V(1).Info("Creating local resource.", "name", req.NamespacedName.String())
+		log.Info("Creating local resource.", "name", req.NamespacedName.String())
 		if err := r.Create(ctx, localKindCopy); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil
@@ -157,7 +166,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			return result, err
 		}
 	} else if shouldDelete {
-		r.Log.V(1).Info("Deleting local resource.", "name", req.NamespacedName.String())
+		log.Info("Deleting local resource.", "name", req.NamespacedName.String())
 		if err := r.Delete(ctx, localKindCopy); err != nil {
 			if apierrors.IsNotFound(err) {
 				return result, nil
@@ -166,7 +175,7 @@ func (r *MirroringReconciler[T]) Reconcile(ctx context.Context, req ctrl.Request
 			return result, err
 		}
 	} else if shouldUpdate {
-		r.Log.V(1).Info("Updating local resource.", "name", req.NamespacedName.String())
+		log.Info("Updating local resource.", "name", req.NamespacedName.String())
 		if err := r.Update(ctx, localKindCopy); err != nil {
 			if apierrors.IsConflict(err) {
 				return ctrl.Result{Requeue: true}, nil

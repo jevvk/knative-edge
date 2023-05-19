@@ -1,4 +1,4 @@
-package prometheus
+package client
 
 import (
 	"encoding/json"
@@ -41,9 +41,10 @@ type prometheusData struct {
 
 type PrometheusResult interface{}
 
-type PrometheusMatrixResult struct {
-	PrometheusResult
+// only matrix is supported
+var _ PrometheusResult = &PrometheusMatrixResult{}
 
+type PrometheusMatrixResult struct {
 	Data []PrometheusMatrixData
 }
 

@@ -2,7 +2,9 @@ package edge
 
 import (
 	"context"
+	"time"
 
+	"edge.jevv.dev/pkg/controllers"
 	"github.com/go-logr/logr"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,6 +57,15 @@ func (r *ConfigMapReconciler) kindMerger(src, dst *corev1.ConfigMap) error {
 }
 
 func (r *ConfigMapReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	//////// debug controller time
+	start := time.Now()
+
+	defer func() {
+		end := time.Now()
+		r.Log.V(controllers.DebugLevel).Info("debug reconcile loop", "durationMs", end.Sub(start).Milliseconds())
+	}()
+	/////// end debug controller time
+
 	return r.mirror.Reconcile(ctx, req)
 }
 

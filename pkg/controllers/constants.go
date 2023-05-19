@@ -13,7 +13,6 @@ const (
 	ManagedByLabel   = "edge.jevv.dev/managed-by"
 	CreatedByLabel   = "edge.jevv.dev/created-by"
 	EdgeOffloadLabel = "edge.jevv.dev/edge-offload"
-	EdgeProxyLabel   = "edge.jevv.dev/edge-proxy"
 
 	KServiceLabel    = "serving.knative.dev/service"
 	KServiceUIDLabel = "serving.knative.dev/serviceUID"
@@ -42,10 +41,4 @@ const (
 	RemoteHostAnnotation           = "edge.jevv.dev/remote-host"
 
 	KnativeNoGCAnnotation = "serving.knative.dev/no-gc"
-)
-
-const (
-	PrometheusUrlEnv      = "PROMETHEUS_URL"
-	PrometheusUserEnv     = "PROMETHEUS_BASIC_USER"
-	PrometheusPasswordEnv = "PROMETHEUS_BASIC_PASSWORD"
 )

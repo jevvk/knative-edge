@@ -2,7 +2,9 @@ package edge
 
 import (
 	"context"
+	"time"
 
+	"edge.jevv.dev/pkg/controllers"
 	"github.com/go-logr/logr"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,6 +49,7 @@ func (r *NamespaceReconciler) kindMerger(src, dst *corev1.Namespace) error {
 
 	dst.Name = src.Name
 	dst.Namespace = src.Namespace
+	// FIXME: this causes an update on create (i.e. init) because of last-generation (which uses resource version)
 	dst.Annotations = src.Annotations
 	dst.Labels = src.Labels
 
@@ -54,6 +57,15 @@ func (r *NamespaceReconciler) kindMerger(src, dst *corev1.Namespace) error {
 }
 
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	//////// debug controller time
+	start := time.Now()
+
+	defer func() {
+		end := time.Now()
+		r.Log.V(controllers.DebugLevel).Info("debug reconcile loop", "durationMs", end.Sub(start).Milliseconds())
+	}()
+	/////// end debug controller time
+
 	return r.mirror.Reconcile(ctx, req)
 }
 

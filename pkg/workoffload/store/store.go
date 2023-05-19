@@ -37,10 +37,12 @@ func (s *Store) NeedLeaderElection() bool {
 }
 
 func (s *Store) cleanUp() {
+	debug := s.Log.V(controllers.DebugLevel)
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.Log.V(controllers.DebugLevel).Info("cleaning up data store")
+	debug.Info("cleaning up data store")
 
 	keysToRemove := make([]string, 0)
 	now := time.Now()
@@ -57,7 +59,7 @@ func (s *Store) cleanUp() {
 		delete(s.data, key)
 	}
 
-	s.Log.V(controllers.DebugLevel).Info("finished cleaning up data store", "keysRemoved", len(keysToRemove))
+	debug.Info("finished cleaning up data store", "keysRemoved", len(keysToRemove))
 }
 
 func (s *Store) Start(ctx context.Context) error {
@@ -85,10 +87,12 @@ func (s *Store) Start(ctx context.Context) error {
 }
 
 func (s *Store) Set(key string, value int64) {
+	debug := s.Log.V(controllers.DebugLevel)
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.Log.V(controllers.DebugLevel).Info("updating data store item", "key", key, "value", value)
+	debug.Info("updating data store item", "key", key, "value", value)
 
 	item := storeItem{
 		Timestamp: time.Now(),
@@ -110,4 +114,17 @@ func (s *Store) Get(key string) (int64, bool) {
 	}
 
 	return item.Value, true
+}
+
+func (s *Store) GetLastUpdateTimestamp(key string) (time.Time, bool) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	item, exists := s.data[key]
+
+	if !exists {
+		return time.Now(), false
+	}
+
+	return item.Timestamp, true
 }

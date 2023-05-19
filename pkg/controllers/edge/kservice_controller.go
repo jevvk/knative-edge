@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -21,7 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"edge.jevv.dev/pkg/controllers"
-	"edge.jevv.dev/pkg/controllers/edge/store"
+	"edge.jevv.dev/pkg/controllers/utils"
+	"edge.jevv.dev/pkg/workoffload/store"
 
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
@@ -42,6 +44,9 @@ type KServiceReconciler struct {
 	ProxyImage string
 	Envs       []string
 	Store      *store.Store
+	HttpProxy  string
+	HttpsProxy string
+	NoProxy    string
 
 	mirror *MirroringReconciler[*servingv1.Service]
 }
@@ -93,10 +98,28 @@ func (r *KServiceReconciler) kindMerger(src, dst *servingv1.Service) error {
 
 	annotations[controllers.RemoteUrlAnnotation] = r.RemoteUrl
 
+	specLabels := dst.Spec.ConfigurationSpec.Template.Labels
+
+	if specLabels == nil {
+		specLabels = make(map[string]string)
+		dst.Spec.ConfigurationSpec.Template.Labels = specLabels
+	}
+
+	specLabels[controllers.EdgeLocalLabel] = "true"
+
 	return nil
 }
 
 func (r *KServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	//////// debug controller time
+	start := time.Now()
+
+	defer func() {
+		end := time.Now()
+		r.Log.V(controllers.DebugLevel).Info("debug reconcile loop", "durationMs", end.Sub(start).Milliseconds())
+	}()
+	/////// end debug controller time
+
 	return r.mirror.Reconcile(ctx, req)
 }
 
@@ -108,7 +131,7 @@ func (r *KServiceReconciler) findServiceFromConfiguration(obj client.Object) []r
 		return []reconcile.Request{}
 	}
 
-	serviceName := getServiceNameFromConfiguration(configuration)
+	serviceName := utils.GetServiceNameFromConfiguration(configuration)
 
 	return []reconcile.Request{
 		{
@@ -143,7 +166,7 @@ func (r *KServiceReconciler) SetupWithManager(mgr ctrl.Manager, predicates ...pr
 			handler.EnqueueRequestsFromMapFunc(r.findServiceFromConfiguration),
 			builder.WithPredicates(
 				LatestReadyRevisionChangedPredicate{},
-				predicate.NewPredicateFuncs(isEdgeProxyConfiguration),
+				predicate.NewPredicateFuncs(utils.IsEdgeProxyConfiguration),
 			),
 		).
 		Complete(r)

@@ -6,15 +6,20 @@ import (
 	"strconv"
 	"time"
 
-	"edge.jevv.dev/pkg/controllers"
-	"edge.jevv.dev/pkg/controllers/edge/store"
 	"github.com/go-logr/logr"
 	klabels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
+
+	"edge.jevv.dev/pkg/controllers"
+	"edge.jevv.dev/pkg/workoffload/prometheus"
+	"edge.jevv.dev/pkg/workoffload/store"
+	"edge.jevv.dev/pkg/workoffload/strategy"
 )
 
 type KServiceListOptions struct {
@@ -35,11 +40,14 @@ func (ko *KServiceListOptions) ApplyToList(o *client.ListOptions) {
 type EdgeWorkOffload struct {
 	client.Client
 
-	Log   logr.Logger
-	Envs  []string
-	Store *store.Store
+	MetricsClient *metricsv.Clientset
 
-	strategy WorkOffloadStrategy
+	Log           logr.Logger
+	Envs          []string
+	Store         *store.Store
+	PrometheusUrl string
+
+	strategy strategy.WorkOffloadStrategy
 }
 
 func (t *EdgeWorkOffload) NeedLeaderElection() bool {
@@ -191,8 +199,10 @@ func (t *EdgeWorkOffload) listServices(ctx context.Context) ([]servingv1.Service
 }
 
 func (t *EdgeWorkOffload) run(ctx context.Context, services []servingv1.Service) error {
+	debug := t.Log.V(controllers.DebugLevel)
+
 	if len(services) == 0 {
-		t.Log.V(controllers.DebugLevel).Info("no services found, will skip this run")
+		debug.Info("no services found, will skip this run")
 		return nil
 	}
 
@@ -200,31 +210,44 @@ func (t *EdgeWorkOffload) run(ctx context.Context, services []servingv1.Service)
 		return fmt.Errorf("could not execute strategy: %w", err)
 	}
 
+	// recover what last traffic was set to
+	for _, service := range services {
+		serviceName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
+		_, exists := t.Store.Get(serviceName.String())
+
+		if exists {
+			continue
+		}
+
+		// update traffic in store if it doesn't exist
+		// default is 0
+		var traffic int64 = 0
+
+		// parse it from annotations
+		if service.Annotations != nil {
+			previousTrafficStr := service.Annotations[controllers.EdgeProxyTrafficAnnotation]
+			previousTraffic, err := strconv.ParseInt(previousTrafficStr, 10, 64)
+
+			if err != nil {
+				traffic = previousTraffic
+			}
+		}
+
+		t.Store.Set(serviceName.String(), traffic)
+	}
+
 	for _, result := range t.strategy.GetResults(services) {
 		// TODO: check if service has traffic enabled (might not matter)
 
 		traffic, exists := t.Store.Get(result.Name.String())
 
-		// update traffic in store if it doesn't exist
 		if !exists {
 			// default is 0
 			traffic = 0
-
-			// parse it from annotations
-			if result.Service != nil && result.Service.Annotations != nil {
-				previousTrafficStr := result.Service.Annotations[controllers.EdgeProxyTrafficAnnotation]
-				previousTraffic, err := strconv.ParseInt(previousTrafficStr, 10, 64)
-
-				if err != nil {
-					traffic = previousTraffic
-				}
-			}
-
-			t.Store.Set(result.Name.String(), traffic)
 		}
 
 		switch result.Result {
-		case IncreaseTraffic:
+		case strategy.IncreaseTraffic:
 			traffic += 10
 
 			if traffic > 100 {
@@ -232,8 +255,8 @@ func (t *EdgeWorkOffload) run(ctx context.Context, services []servingv1.Service)
 			}
 
 			t.Store.Set(result.Name.String(), traffic)
-		case DecreaseTraffic:
-			traffic -= 10
+		case strategy.DecreaseTraffic:
+			traffic -= 2
 
 			if traffic < 0 {
 				traffic = 0
@@ -242,16 +265,21 @@ func (t *EdgeWorkOffload) run(ctx context.Context, services []servingv1.Service)
 			t.Store.Set(result.Name.String(), traffic)
 		}
 
-		t.Log.V(controllers.DebugLevel).Info("debug results", "name", result.Name, "result", result.Result, "traffic", traffic)
+		debug.Info("debug results", "name", result.Name, "result", result.Result, "traffic", traffic)
 	}
 
 	return nil
 }
 
 func (t *EdgeWorkOffload) Start(ctx context.Context) error {
+	debug := t.Log.V(controllers.DebugLevel)
+	log := t.Log.V(controllers.InfoLevel)
+
 	var err error
 
-	if t.strategy, err = NewPrometheusStrategy(t.Log.WithName("strategy")); err != nil {
+	log.Info("Starting edge traffic runnable.")
+
+	if t.strategy, err = prometheus.NewStrategy(t.Log, t.PrometheusUrl, t.Client, t.MetricsClient); err != nil {
 		return err
 	}
 
@@ -261,7 +289,7 @@ func (t *EdgeWorkOffload) Start(ctx context.Context) error {
 
 	go func() {
 		for {
-			timeoutCtx, timeoutCancel := context.WithTimeout(context.Background(), time.Second*15)
+			timeoutCtx, timeoutCancel := context.WithTimeout(context.Background(), time.Second*strategy.EvaluationPeriodInSeconds)
 			// timeoutCtx, timeoutCancel := context.WithTimeout(context.Background(), time.Minute*5)
 
 			select {
@@ -275,11 +303,20 @@ func (t *EdgeWorkOffload) Start(ctx context.Context) error {
 			services, err := t.listServices(ctx)
 
 			if err != nil {
-				t.Log.Error(err, "Encountered an error while listing Knative services. Will skip this run.")
+				debug.Error(err, "Encountered an error while listing Knative services. Will skip this run.")
 				continue
 			}
 
-			t.run(ctx, services)
+			startTime := time.Now()
+			err = t.run(ctx, services)
+			duration := time.Since(startTime)
+
+			if err != nil {
+				debug.Error(err, "Encountered an error while executing edge traffic strategy. Will skip this run.")
+				continue
+			}
+
+			debug.Info("debug run time", "duration", duration)
 		}
 	}()
 

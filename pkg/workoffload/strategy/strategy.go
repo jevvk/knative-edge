@@ -1,4 +1,4 @@
-package workoffload
+package strategy
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-type workOffloadResult int
+type TrafficResult int
 
-func (r workOffloadResult) String() string {
+func (r TrafficResult) String() string {
 	switch r {
 	case IncreaseTraffic:
 		return "IncreaseTraffic"
@@ -32,7 +32,7 @@ const (
 type WorkOffloadServiceResult struct {
 	Name    types.NamespacedName
 	Service *servingv1.Service
-	Result  workOffloadResult
+	Result  TrafficResult
 }
 
 type WorkOffloadStrategy interface {

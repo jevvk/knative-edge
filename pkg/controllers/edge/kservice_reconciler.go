@@ -2,9 +2,13 @@ package edge
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"time"
 
 	"edge.jevv.dev/pkg/controllers"
+	"edge.jevv.dev/pkg/controllers/utils"
+	"edge.jevv.dev/pkg/workoffload/strategy"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -14,16 +18,25 @@ import (
 )
 
 func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *servingv1.Service) (ctrl.Result, error) {
-	logger := r.Log.V(controllers.DebugLevel).WithName("service")
+	debug := r.Log.WithName("service").V(controllers.DebugLevel)
 
 	if service == nil {
 		return ctrl.Result{}, nil
 	}
 
+	//////// debug controller time
+	start := time.Now()
+
+	defer func() {
+		end := time.Now()
+		debug.Info("debug reconcile loop", "durationMs", end.Sub(start).Milliseconds())
+	}()
+	/////// end debug controller time
+
 	configuration := &servingv1.Configuration{}
 
 	serviceNamespacedName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
-	configurationNamespacedName := getConfigurationNamespacedName(serviceNamespacedName)
+	configurationNamespacedName := utils.GetConfigurationNamespacedName(serviceNamespacedName)
 
 	if !kServiceHasComputeOffloadLabel(service) {
 		// if the service doesn't have an annotation, it can mean 2 things
@@ -47,24 +60,35 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		}
 
 		// delete target if exists
-		removeEdgeProxyTarget(service)
+		utils.RemoveEdgeProxyTarget(service)
 
 		return ctrl.Result{}, nil
 	}
 
-	logger.Info("compute offload enabled", "name", configurationNamespacedName)
+	debug.Info("compute offload enabled", "name", configurationNamespacedName)
 
 	// retrieve latest traffic split target
 	trafficSplit, trafficSplitExists := r.Store.Get(serviceNamespacedName.String())
 
 	if !trafficSplitExists {
+		// default to 0
 		trafficSplit = 0
+
+		// parse it from annotations
+		if service.Annotations != nil {
+			previousTrafficStr := service.Annotations[controllers.EdgeProxyTrafficAnnotation]
+			previousTraffic, err := strconv.ParseInt(previousTrafficStr, 10, 64)
+
+			if err != nil {
+				trafficSplit = previousTraffic
+			}
+		}
 	}
 
 	traffic := make([]servingv1.TrafficTarget, 0, 1)
 
 	// ensure latest target is specified
-	if target := getLatestRevisionTarget(service); target != nil {
+	if target := utils.GetLatestRevisionTarget(service); target != nil {
 		var percent int64 = 100 - trafficSplit
 		target.Percent = &percent
 
@@ -80,26 +104,26 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 	}
 
 	// ensure edge proxy target is specified
-	if target := getEdgeProxyTarget(service); target != nil {
+	if target := utils.GetEdgeProxyTarget(service); target != nil {
 		// if the target already exists, check if we need to change the tag
 
-		logger.Info("edge proxy target found", "name", configurationNamespacedName)
+		debug.Info("edge proxy target found", "name", configurationNamespacedName)
 
 		if err := r.Get(ctx, configurationNamespacedName, configuration); err != nil {
 			// something is not right, target exists, but revision doesn't
 			// requeue after some time
 			if apierrors.IsNotFound(err) {
-				logger.Info("edge proxy revision not found", "name", configurationNamespacedName)
+				debug.Info("edge proxy revision not found", "name", configurationNamespacedName)
 				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
 
 			return ctrl.Result{}, err
 		}
 
-		logger.Info("debug edge proxy revision", "revision", getTargetNameFromConfiguration(configuration))
+		debug.Info("debug edge proxy revision", "revision", utils.GetTargetNameFromConfiguration(configuration))
 
-		target.RevisionName = getTargetNameFromConfiguration(configuration)
-		target.Tag = getTargetTagFromConfiguration(configuration)
+		target.RevisionName = utils.GetTargetNameFromConfiguration(configuration)
+		target.Tag = utils.GetTargetTagFromConfiguration(configuration)
 		target.Percent = &trafficSplit
 
 		traffic = append(traffic, *target)
@@ -107,11 +131,11 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		// if target revision exists, change the spec
 		// this is because we need to change the service if the service
 		// is changed in the remote
-		logger.Info("edge proxy target not found", "name", configurationNamespacedName)
+		debug.Info("edge proxy target not found", "name", configurationNamespacedName)
 
 		if err := r.Get(ctx, configurationNamespacedName, configuration); err != nil {
 			if apierrors.IsNotFound(err) {
-				logger.Info("edge proxy revision not found", "name", configurationNamespacedName)
+				debug.Info("edge proxy revision not found", "name", configurationNamespacedName)
 				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
 
@@ -121,19 +145,19 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		// we know the revision exists but the revision isn't set in the service,
 		// so we add it as a traffic target
 
-		logger.Info("debug edge proxy revision", "revision", getTargetNameFromConfiguration(configuration))
+		debug.Info("debug edge proxy revision", "revision", utils.GetTargetNameFromConfiguration(configuration))
 
-		revisionName := getTargetNameFromConfiguration(configuration)
+		revisionName := utils.GetTargetNameFromConfiguration(configuration)
 
 		if revisionName == "" {
 			// not ready yet, try again later
-			logger.Info("edge proxy revision not ready", "name", configurationNamespacedName)
+			debug.Info("edge proxy revision not ready", "name", configurationNamespacedName)
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 
 		traffic = append(traffic, servingv1.TrafficTarget{
 			RevisionName: revisionName,
-			Tag:          getTargetTagFromConfiguration(configuration),
+			Tag:          utils.GetTargetTagFromConfiguration(configuration),
 			Percent:      &trafficSplit,
 		})
 	}
@@ -141,9 +165,18 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 	// finally, update traffic
 	service.Spec.Traffic = traffic
 
+	// update annotations
+	annotations := service.Annotations
+
+	if annotations == nil {
+		annotations = make(map[string]string)
+		service.Annotations = annotations
+	}
+
+	annotations[controllers.EdgeProxyTrafficAnnotation] = fmt.Sprint(trafficSplit)
+
 	// logger.Info("debug service", "service", service)
 
 	// requeue every 5 minutes to update the traffic split
-	return ctrl.Result{RequeueAfter: time.Minute}, nil
-	// return ctrl.Result{RequeueAfter: time.Minute * 5}, nil
+	return ctrl.Result{RequeueAfter: strategy.EvaluationPeriodInSeconds * time.Second}, nil
 }

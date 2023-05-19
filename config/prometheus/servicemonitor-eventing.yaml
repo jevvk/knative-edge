@@ -1,0 +1,106 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: broker-filter
+    prometheus-app: knative-edge
+  name: broker-filter
+  namespace: knative-edge-metrics
+spec:
+  endpoints:
+  - interval: 30s
+    port: http-metrics
+  namespaceSelector:
+    matchNames:
+    - knative-eventing
+  selector:
+    matchLabels:
+      eventing.knative.dev/brokerRole: filter
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: broker-ingress
+    prometheus-app: knative-edge
+  name: broker-ingress
+  namespace: knative-edge-metrics
+spec:
+  endpoints:
+  - interval: 30s
+    port: http-metrics
+  namespaceSelector:
+    matchNames:
+    - knative-eventing
+  selector:
+    matchLabels:
+      eventing.knative.dev/brokerRole: ingress
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: eventing-controller
+  labels:
+    app: eventing-controller
+    prometheus-app: knative-edge
+  namespace: knative-edge-metrics
+spec:
+  selector:
+    matchLabels:
+      app: eventing-controller
+  namespaceSelector:
+    matchNames:
+    - knative-eventing
+  podMetricsEndpoints:
+  - port: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: imc-controller
+  namespace: knative-edge-metrics
+  labels:
+    prometheus-app: knative-edge
+spec:
+  selector:
+    matchLabels:
+      messaging.knative.dev/role: controller
+  namespaceSelector:
+    matchNames:
+    - knative-eventing
+  podMetricsEndpoints:
+  - port: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ping-source
+  namespace: knative-edge-metrics
+  labels:
+    prometheus-app: knative-edge
+spec:
+  selector:
+    matchLabels:
+      eventing.knative.dev/source: ping-source-controller
+  namespaceSelector:
+    matchNames:
+    - knative-eventing
+  podMetricsEndpoints:
+  - port: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: apiserver-source
+  namespace: knative-edge-metrics
+  labels:
+    prometheus-app: knative-edge
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+     eventing.knative.dev/source: apiserver-source-controller
+  podMetricsEndpoints:
+  - port: metrics

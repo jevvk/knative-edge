@@ -1,5 +1,7 @@
 package controllers
 
 const (
-	DebugLevel = 1
+	InfoLevel        = 0
+	DebugLevel       = 3
+	ExperimentsLevel = 1
 )

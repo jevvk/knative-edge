@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
@@ -41,8 +42,8 @@ import (
 	//+kubebuilder:scaffold:imports
 
 	"edge.jevv.dev/pkg/controllers/edge"
-	"edge.jevv.dev/pkg/controllers/edge/store"
-	"edge.jevv.dev/pkg/controllers/edge/workoffload"
+	"edge.jevv.dev/pkg/workoffload"
+	"edge.jevv.dev/pkg/workoffload/store"
 )
 
 var (
@@ -62,9 +63,16 @@ func init() {
 func main() {
 	var metricsAddr string
 	var probeAddr string
+
 	var proxyImage string
 	var environments string
+
 	var remoteUrl string
+	var prometheusUrl string
+
+	var httpProxy string
+	var httpsProxy string
+	var noProxy string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -73,6 +81,11 @@ func main() {
 	flag.StringVar(&environments, "envs", "", "A list of comma separated list of environments. The edge cluster will only listen and propagate to these environments.")
 
 	flag.StringVar(&remoteUrl, "remote-url", "", "The url of the remote cluster.")
+	flag.StringVar(&prometheusUrl, "prometheus-url", "", "The url of the Prometheus instance.")
+
+	flag.StringVar(&httpProxy, "http-proxy", "", "Address of http proxy")
+	flag.StringVar(&httpsProxy, "https-proxy", "", "Address of https proxy")
+	flag.StringVar(&noProxy, "no-proxy", "", "Skip proxy for domains or ips")
 
 	opts := zap.Options{
 		Development: true,
@@ -169,6 +182,9 @@ func main() {
 		ProxyImage:    proxyImage,
 		Envs:          envs,
 		Store:         &trafficStore,
+		HttpProxy:     httpProxy,
+		HttpsProxy:    httpsProxy,
+		NoProxy:       noProxy,
 	}).SetupWithManager(mgr, hasEdgeLabelPredicate); err != nil {
 		setupLog.Error(err, "Unable to create controller.", "controller", "kservice")
 		os.Exit(1)
@@ -184,11 +200,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	metricsClient, err := metricsv.NewForConfig(mgr.GetConfig())
+
+	if err != nil {
+		setupLog.Error(err, "Unable to set up metrics client.")
+		setupLog.Error(err, "Unable to set up metrics client.")
+		os.Exit(1)
+	}
+
 	if err := mgr.Add(&workoffload.EdgeWorkOffload{
-		Client: mgr.GetClient(),
-		Envs:   envs,
-		Log:    mgr.GetLogger().WithName("edge-traffic"),
-		Store:  &trafficStore,
+		Client:        mgr.GetClient(),
+		MetricsClient: metricsClient,
+		Envs:          envs,
+		Log:           mgr.GetLogger().WithName("edge-traffic"),
+		Store:         &trafficStore,
+		PrometheusUrl: prometheusUrl,
 	}); err != nil {
 		setupLog.Error(err, "Unable to set up edge traffic splitter.")
 		os.Exit(1)

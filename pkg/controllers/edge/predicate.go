@@ -175,3 +175,46 @@ func (LatestReadyRevisionChangedPredicate) Update(e event.UpdateEvent) bool {
 
 	return oldConfiguration.Status.LatestReadyRevisionName != newConfiguration.Status.LatestReadyRevisionName
 }
+
+type RemoteResourceChangedPredicate struct {
+	predicate.Funcs
+}
+
+func haveRemoteResourceLabelsChanged(objectOld, objectNew client.Object) bool {
+	labelsOld := objectOld.GetLabels()
+
+	if labelsOld == nil {
+		labelsOld = make(map[string]string)
+	}
+
+	labelsNew := objectNew.GetLabels()
+
+	if labelsNew == nil {
+		labelsNew = make(map[string]string)
+	}
+
+	return labelsOld[controllers.EnvironmentLabel] != labelsNew[controllers.EnvironmentLabel] ||
+		labelsOld[controllers.EdgeOffloadLabel] != labelsNew[controllers.EdgeOffloadLabel]
+}
+
+func (RemoteResourceChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil {
+		return true
+	}
+
+	if e.ObjectNew == nil {
+		return false
+	}
+
+	// spec has changed
+	if e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration() {
+		return true
+	}
+
+	// labels have changed
+	if haveRemoteResourceLabelsChanged(e.ObjectOld, e.ObjectNew) {
+		return true
+	}
+
+	return false
+}

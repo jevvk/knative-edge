@@ -1,0 +1,100 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: controller
+    prometheus-app: knative-edge
+  name: controller
+  namespace: knative-edge-metrics
+spec:
+  endpoints:
+  - interval: 30s
+    port: http-metrics
+  namespaceSelector:
+    matchNames:
+    - knative-serving
+  selector:
+    matchLabels:
+      app: controller
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: autoscaler
+    prometheus-app: knative-edge
+  name: autoscaler
+  namespace: knative-edge-metrics
+spec:
+  endpoints:
+  - interval: 30s
+    port: http-metrics
+  namespaceSelector:
+    matchNames:
+    - knative-serving
+  selector:
+    matchLabels:
+      app: autoscaler
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: activator
+    prometheus-app: knative-edge
+  name: activator
+  namespace: knative-edge-metrics
+spec:
+  endpoints:
+  - interval: 30s
+    port: http-metrics
+  namespaceSelector:
+    matchNames:
+    - knative-serving
+  selector:
+    matchLabels:
+      app: activator
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: webhook
+    prometheus-app: knative-edge
+  name: webhook
+  namespace: knative-edge-metrics
+spec:
+  endpoints:
+  - interval: 30s
+    port: http-metrics
+  namespaceSelector:
+    matchNames:
+    - knative-serving
+  selector:
+    matchLabels:
+      app: webhook
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  labels:
+    app: queue-proxy
+    prometheus-app: knative-edge
+  name: queue-proxy
+  namespace: knative-edge-metrics
+spec:
+  podMetricsEndpoints:
+  - interval: 30s
+    port: http-usermetric
+  namespaceSelector:
+    any: true
+  selector:
+    matchExpressions:
+    - key: "app"
+      operator: Exists
+    - key: "serving.knative.dev/service"
+      operator: Exists
+    - key: "serving.knative.dev/serviceUID"
+      operator: Exists
+

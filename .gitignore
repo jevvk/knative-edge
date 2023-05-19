@@ -30,3 +30,7 @@ testbin/*
 
 # e2e
 e2e/tmp
+
+build/
+cmd/test/
+tmp/

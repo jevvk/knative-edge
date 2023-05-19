@@ -1,9 +1,11 @@
-package controllers
+package utils
 
 import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"edge.jevv.dev/pkg/controllers"
 )
 
 func UpdateLastGenerationAnnotation(kind client.Object) {
@@ -14,7 +16,7 @@ func UpdateLastGenerationAnnotation(kind client.Object) {
 		kind.SetAnnotations(annotations)
 	}
 
-	annotations[LastGenerationAnnotation] = fmt.Sprint(kind.GetResourceVersion())
+	annotations[controllers.LastGenerationAnnotation] = fmt.Sprint(kind.GetResourceVersion())
 }
 
 func UpdateLastRemoteGenerationAnnotation(localKind, remoteKind client.Object) {
@@ -25,7 +27,7 @@ func UpdateLastRemoteGenerationAnnotation(localKind, remoteKind client.Object) {
 		localKind.SetAnnotations(annotations)
 	}
 
-	annotations[LastRemoteGenerationAnnotation] = fmt.Sprint(remoteKind.GetResourceVersion())
+	annotations[controllers.LastRemoteGenerationAnnotation] = fmt.Sprint(remoteKind.GetResourceVersion())
 }
 
 func UpdateLabels(object client.Object) {
@@ -36,8 +38,8 @@ func UpdateLabels(object client.Object) {
 		object.SetLabels(labels)
 	}
 
-	labels[AppLabel] = "knative-edge"
-	labels[ManagedLabel] = "true"
-	labels[ManagedByLabel] = "knative-edge"
-	labels[CreatedByLabel] = "knative-edge-controller"
+	labels[controllers.AppLabel] = "knative-edge"
+	labels[controllers.ManagedLabel] = "true"
+	labels[controllers.ManagedByLabel] = "knative-edge"
+	labels[controllers.CreatedByLabel] = "knative-edge-controller"
 }

@@ -1,0 +1,568 @@
+{
+    "cluster": {
+        "Cpu": {
+            "Percentage": 72.649994,
+            "Usage": 14530,
+            "Capacity": 20000
+        },
+        "Memory": {
+            "Percentage": 44.528194,
+            "Usage": 3480535040,
+            "Capacity": 7816474624
+        },
+        "Pods": {
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-6l2gf": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-6l2gf",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi3",
+                "Cpu": {
+                    "Percentage": 26.875002,
+                    "Usage": 1075,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.6271691,
+                    "Usage": 25108480,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-bbj9d": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-bbj9d",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi3",
+                "Cpu": {
+                    "Percentage": 25.975,
+                    "Usage": 1039,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.733456,
+                    "Usage": 26124288,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-btzbl": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-btzbl",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi1",
+                "Cpu": {
+                    "Percentage": 26.775,
+                    "Usage": 1071,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.4214528,
+                    "Usage": 23142400,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-dqpf2": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-dqpf2",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi1",
+                "Cpu": {
+                    "Percentage": 26.324999,
+                    "Usage": 1053,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.45231,
+                    "Usage": 23437312,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-g7b79": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-g7b79",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi2",
+                "Cpu": {
+                    "Percentage": 29.324999,
+                    "Usage": 1173,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.2028792,
+                    "Usage": 21053440,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-kbztp": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-kbztp",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi0",
+                "Cpu": {
+                    "Percentage": 26.175001,
+                    "Usage": 1047,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.5787401,
+                    "Usage": 24645632,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-rqxps": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-rqxps",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi2",
+                "Cpu": {
+                    "Percentage": 27.375,
+                    "Usage": 1095,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.4548817,
+                    "Usage": 23461888,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-t9ffb": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-t9ffb",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi0",
+                "Cpu": {
+                    "Percentage": 25.45,
+                    "Usage": 1018,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.848314,
+                    "Usage": 27222016,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-wpcrf": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-wpcrf",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi3",
+                "Cpu": {
+                    "Percentage": 28.025002,
+                    "Usage": 1121,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 1.8745902,
+                    "Usage": 17915904,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-wwhhz": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-wwhhz",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi0",
+                "Cpu": {
+                    "Percentage": 25.224998,
+                    "Usage": 1009,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.665741,
+                    "Usage": 25477120,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            },
+            "edge-default-env/experiment-matmult-00027-deployment-755cfc776c-znpgs": {
+                "Name": "experiment-matmult-00027-deployment-755cfc776c-znpgs",
+                "Namespace": "edge-default-env",
+                "Node": "edge-rpi1",
+                "Cpu": {
+                    "Percentage": 27.425,
+                    "Usage": 1097,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 2.6100261,
+                    "Usage": 24944640,
+                    "Capacity": 955723776
+                },
+                "Storage": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 0
+                }
+            }
+        },
+        "Nodes": {
+            "edge-rpi0": {
+                "Name": "edge-rpi0",
+                "Cpu": {
+                    "Percentage": 97.95,
+                    "Usage": 3918,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 26.842127,
+                    "Usage": 256536576,
+                    "Capacity": 955723776
+                }
+            },
+            "edge-rpi1": {
+                "Name": "edge-rpi1",
+                "Cpu": {
+                    "Percentage": 92,
+                    "Usage": 3680,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 27.992422,
+                    "Usage": 267530240,
+                    "Capacity": 955723776
+                }
+            },
+            "edge-rpi2": {
+                "Name": "edge-rpi2",
+                "Cpu": {
+                    "Percentage": 60.575,
+                    "Usage": 2423,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 24.534674,
+                    "Usage": 234483712,
+                    "Capacity": 955723776
+                }
+            },
+            "edge-rpi3": {
+                "Name": "edge-rpi3",
+                "Cpu": {
+                    "Percentage": 94.725,
+                    "Usage": 3789,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 27.656418,
+                    "Usage": 264318976,
+                    "Capacity": 955723776
+                }
+            },
+            "edge-surface-go": {
+                "Name": "edge-surface-go",
+                "Cpu": {
+                    "Percentage": 18,
+                    "Usage": 720,
+                    "Capacity": 4000
+                },
+                "Memory": {
+                    "Percentage": 61.54042,
+                    "Usage": 2457665536,
+                    "Capacity": 3993579520
+                }
+            }
+        },
+        "Services": {
+            "/experiment-matmult": {
+                "Name": "experiment-matmult",
+                "Namespace": "",
+                "Pods": [],
+                "Cpu": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 20000
+                },
+                "Memory": {
+                    "Percentage": 0,
+                    "Usage": 0,
+                    "Capacity": 7816474624
+                },
+                "Timeline": {
+                    "Timestamp": 0,
+                    "Window": 0,
+                    "Step": 0,
+                    "RequestRate": []
+                }
+            },
+            "edge-default-env/experiment-matmult": {
+                "Name": "experiment-matmult",
+                "Namespace": "edge-default-env",
+                "Pods": [
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-6l2gf",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi3",
+                        "Cpu": {
+                            "Percentage": 26.875002,
+                            "Usage": 1075,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.6271691,
+                            "Usage": 25108480,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-bbj9d",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi3",
+                        "Cpu": {
+                            "Percentage": 25.975,
+                            "Usage": 1039,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.733456,
+                            "Usage": 26124288,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-btzbl",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi1",
+                        "Cpu": {
+                            "Percentage": 26.775,
+                            "Usage": 1071,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.4214528,
+                            "Usage": 23142400,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-dqpf2",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi1",
+                        "Cpu": {
+                            "Percentage": 26.324999,
+                            "Usage": 1053,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.45231,
+                            "Usage": 23437312,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-g7b79",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi2",
+                        "Cpu": {
+                            "Percentage": 29.324999,
+                            "Usage": 1173,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.2028792,
+                            "Usage": 21053440,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-kbztp",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi0",
+                        "Cpu": {
+                            "Percentage": 26.175001,
+                            "Usage": 1047,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.5787401,
+                            "Usage": 24645632,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-rqxps",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi2",
+                        "Cpu": {
+                            "Percentage": 27.375,
+                            "Usage": 1095,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.4548817,
+                            "Usage": 23461888,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-t9ffb",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi0",
+                        "Cpu": {
+                            "Percentage": 25.45,
+                            "Usage": 1018,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.848314,
+                            "Usage": 27222016,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-wpcrf",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi3",
+                        "Cpu": {
+                            "Percentage": 28.025002,
+                            "Usage": 1121,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 1.8745902,
+                            "Usage": 17915904,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-wwhhz",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi0",
+                        "Cpu": {
+                            "Percentage": 25.224998,
+                            "Usage": 1009,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.665741,
+                            "Usage": 25477120,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    },
+                    {
+                        "Name": "experiment-matmult-00027-deployment-755cfc776c-znpgs",
+                        "Namespace": "edge-default-env",
+                        "Node": "edge-rpi1",
+                        "Cpu": {
+                            "Percentage": 27.425,
+                            "Usage": 1097,
+                            "Capacity": 4000
+                        },
+                        "Memory": {
+                            "Percentage": 2.6100261,
+                            "Usage": 24944640,
+                            "Capacity": 955723776
+                        },
+                        "Storage": {
+                            "Percentage": 0,
+                            "Usage": 0,
+                            "Capacity": 0
+                        }
+                    }
+                ],
+                "Cpu": {
+                    "Percentage": 58.99,
+                    "Usage": 11798,
+                    "Capacity": 20000
+                },
+                "Memory": {
+                    "Percentage": 3.358715,
+                    "Usage": 262533120,
+                    "Capacity": 7816474624
+                },
+                "Timeline": {
+                    "Timestamp": 0,
+                    "Window": 0,
+                    "Step": 0,
+                    "RequestRate": []
+                }
+            }
+        }
+    }
+}

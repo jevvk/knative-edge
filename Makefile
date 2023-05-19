@@ -61,7 +61,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	@test ! -f config/rbac/role.yaml || rm config/rbac/role.yaml
 
 	@mkdir -p config/rbac/controller
-	@$(CONTROLLER_GEN) rbac:roleName=knative-edge-controller-role crd webhook paths="./pkg/controllers/edge/..." output:crd:artifacts:config=config/crd/bases
+	@$(CONTROLLER_GEN) rbac:roleName=knative-edge-controller-role crd webhook paths="{./pkg/controllers/edge/...,./pkg/workoffload/...}" output:crd:artifacts:config=config/crd/bases
 	@test ! -f config/rbac/role.yaml || mv config/rbac/role.yaml config/rbac/controller/role.yaml
 
 	@mkdir -p config/rbac/operator
@@ -111,6 +111,19 @@ build: generate fmt vet kustomize ## Build, push, and generate release YAML file
 	$(KUSTOMIZE) build config/default/edge \
 		| KO_DOCKER_REPO=$(REPO) ko resolve -B --platform linux/amd64,linux/arm64,linux/arm -f - \
 		> build/release/knative-edge-$(PKG_VERSION)-edge-deployment.yaml
+
+.PHONY: build-local
+build-local: generate fmt vet kustomize ## Build, push, and generate release YAML files.
+	mkdir -p build/release
+	rm -rf build/release/*
+
+	$(KUSTOMIZE) build config/default/cloud \
+		| ko resolve -L -B --platform linux/amd64,linux/arm64,linux/arm -f - \
+		> build/release/knative-edge-$(PKG_VERSION)-cloud-deployment-local.yaml
+	
+	$(KUSTOMIZE) build config/default/edge \
+		| ko resolve -L -B --platform linux/amd64,linux/arm64,linux/arm -f - \
+		> build/release/knative-edge-$(PKG_VERSION)-edge-deployment-local.yaml
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

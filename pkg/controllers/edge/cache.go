@@ -7,7 +7,7 @@ import (
 	klabels "k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
-	// corev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
@@ -69,6 +69,12 @@ var ManagedScopedCache = cache.BuilderWithOptions(cache.Options{
 		&servingv1.Configuration{}: cache.ObjectSelector{
 			Label: klabels.SelectorFromSet(map[string]string{
 				controllers.ManagedLabel:   "true",
+				controllers.EdgeLocalLabel: "true",
+			}),
+		},
+		&corev1.Node{}: cache.ObjectSelector{},
+		&corev1.Pod{}: cache.ObjectSelector{
+			Label: klabels.SelectorFromSet(map[string]string{
 				controllers.EdgeLocalLabel: "true",
 			}),
 		},

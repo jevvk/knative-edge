@@ -97,22 +97,24 @@ func (r *EdgeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (c
 }
 
 func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1alpha1.KnativeEdge) (*corev1.Secret, error) {
+	log := r.Log.V(controllers.InfoLevel)
+
 	if edge == nil {
 		return nil, nil
 	}
 
 	var kubeconfigSecret corev1.Secret
 
-	r.Log.Info("Reconciling KnativeEdge remote cluster.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
+	log.Info("Reconciling KnativeEdge remote cluster.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
 
 	if edge.Spec.SecretRef != nil {
-		r.Log.Info("Reconciling KnativeEdge remote cluster with referenced secret.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace, "KnativeEdge/Secret/Name", edge.Spec.SecretRef.Name, "KnativeEdge/Secret/Namespace", edge.Spec.SecretRef.Namespace)
+		log.Info("Reconciling KnativeEdge remote cluster with referenced secret.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace, "KnativeEdge/Secret/Name", edge.Spec.SecretRef.Name, "KnativeEdge/Secret/Namespace", edge.Spec.SecretRef.Namespace)
 
 		namespacedSecretName := types.NamespacedName{Name: edge.Spec.SecretRef.Name, Namespace: edge.Spec.SecretRef.Namespace}
 
 		var remoteCluster cluster.Cluster
 
-		r.Log.Info("Retrieving KnativeEdge referenced secret.", "secret", namespacedSecretName.String())
+		log.Info("Retrieving KnativeEdge referenced secret.", "secret", namespacedSecretName.String())
 
 		// FIXME: find a way to cache this
 		if err := r.reader.Get(ctx, namespacedSecretName, &kubeconfigSecret); err != nil {
@@ -200,16 +202,18 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1a
 		}
 	}
 
-	r.Log.Info("KnativeEdge remote cluster reconciliation finished.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
+	log.Info("KnativeEdge remote cluster reconciliation finished.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
 
 	return &kubeconfigSecret, nil
 }
 
 func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1alpha1.KnativeEdge) (ctrl.Result, error) {
+	log := r.Log.V(controllers.InfoLevel)
+
 	if edge != nil {
-		r.Log.Info("Reconciling KnativeEdge secret.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
+		log.Info("Reconciling KnativeEdge secret.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
 	} else {
-		r.Log.Info("Reconciling nil KnativeEdge secret.")
+		log.Info("Reconciling nil KnativeEdge secret.")
 	}
 
 	systemClient := r.SystemCluster.GetClient()
@@ -236,7 +240,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1al
 	}
 
 	if err := systemClient.Get(ctx, namespacedSecretName, &secret); err != nil {
-		r.Log.Info("Retrieving KnativeEdge system secret.", "secret", namespacedSecretName.String())
+		log.Info("Retrieving KnativeEdge system secret.", "secret", namespacedSecretName.String())
 
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
@@ -256,7 +260,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1al
 	}
 
 	if shouldCreate {
-		r.Log.Info("Creating KnativeEdge system secret.", "secret", namespacedSecretName.String())
+		log.Info("Creating KnativeEdge system secret.", "secret", namespacedSecretName.String())
 
 		r.buildSecret(namespacedSecretName, edge, &refSecret, &secret)
 		if err := systemClient.Create(ctx, &secret); err != nil {
@@ -269,7 +273,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1al
 
 		r.Recorder.Event(edge, "Normal", "SecretCreated", "Knative Edge config has been created.")
 	} else if shouldUpdate {
-		r.Log.Info("Updating KnativeEdge system secret.", "secret", namespacedSecretName.String())
+		log.Info("Updating KnativeEdge system secret.", "secret", namespacedSecretName.String())
 
 		r.buildSecret(namespacedSecretName, edge, &refSecret, &secret)
 		if err := systemClient.Update(ctx, &secret); err != nil {
@@ -282,7 +286,7 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1al
 
 		r.Recorder.Event(edge, "Normal", "SecretUpdated", "Knative Edge config has been updated.")
 	} else if shouldDelete {
-		r.Log.Info("Deleting KnativeEdge system secret.", "secret", namespacedSecretName.String())
+		log.Info("Deleting KnativeEdge system secret.", "secret", namespacedSecretName.String())
 
 		if err := systemClient.Delete(ctx, &secret); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -293,16 +297,18 @@ func (r *EdgeReconciler) reconcileSecret(ctx context.Context, edge *operatorv1al
 		}
 	}
 
-	r.Log.Info("KnativeEdge system secret reconciliation finished.", "deployment", namespacedSecretName.String())
+	log.Info("KnativeEdge system secret reconciliation finished.", "deployment", namespacedSecretName.String())
 
 	return ctrl.Result{}, nil
 }
 
 func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operatorv1alpha1.KnativeEdge) (ctrl.Result, error) {
+	log := r.Log.V(controllers.InfoLevel)
+
 	if edge != nil {
-		r.Log.Info("Reconciling KnativeEdge deployment.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
+		log.Info("Reconciling KnativeEdge deployment.", "KnativeEdge/Name", edge.Name, "KnativeEdge/Namespace", edge.Namespace)
 	} else {
-		r.Log.Info("Reconciling nil KnativeEdge deployment.")
+		log.Info("Reconciling nil KnativeEdge deployment.")
 	}
 
 	systemClient := r.SystemCluster.GetClient()
@@ -375,7 +381,7 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 	}
 
 	if shouldCreate {
-		r.Log.Info("Creating KnativeEdge system deployment.", "deployment", namespacedSecretName.String())
+		log.Info("Creating KnativeEdge system deployment.", "deployment", namespacedSecretName.String())
 
 		r.buildDeployment(namespacedDeploymentName, namespacedSecretName, edge, &edgeCluster, &deployment)
 		if err := systemClient.Create(ctx, &deployment); err != nil {
@@ -393,7 +399,7 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 			return ctrl.Result{}, err
 		}
 	} else if shouldUpdate {
-		r.Log.Info("Updating KnativeEdge system deployment.", "deployment", namespacedSecretName.String())
+		log.Info("Updating KnativeEdge system deployment.", "deployment", namespacedSecretName.String())
 
 		r.buildDeployment(namespacedDeploymentName, namespacedSecretName, edge, &edgeCluster, &deployment)
 		if err := systemClient.Update(ctx, &deployment); err != nil {
@@ -411,7 +417,7 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 			return ctrl.Result{}, err
 		}
 	} else if shouldDelete {
-		r.Log.Info("Deleting KnativeEdge system deployment.", "deployment", namespacedSecretName.String())
+		log.Info("Deleting KnativeEdge system deployment.", "deployment", namespacedSecretName.String())
 
 		if err := systemClient.Delete(ctx, &deployment); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -422,7 +428,7 @@ func (r *EdgeReconciler) reconcileDeployment(ctx context.Context, edge *operator
 		}
 	}
 
-	r.Log.Info("KnativeEdge system deployment reconciliation finished.", "deployment", namespacedSecretName.String())
+	log.Info("KnativeEdge system deployment reconciliation finished.", "deployment", namespacedSecretName.String())
 
 	return ctrl.Result{}, nil
 }
@@ -505,34 +511,16 @@ func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName ty
 							"--envs", strings.Join(edgeCluster.Spec.Environments, ","),
 							"--proxy-image", proxyImage,
 							"--remote-url", edge.Spec.ClusterHostnameOrIp,
+							"--http-proxy", edge.Spec.Proxy.HttpProxy,
+							"--https-proxy", edge.Spec.Proxy.HttpsProxy,
+							"--no-proxy", edge.Spec.Proxy.NoProxy,
+							"--prometheus-url", edge.Spec.Prometheus.URL,
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "edgeconfig",
 								MountPath: edgecontrollers.ConfigPath,
 								ReadOnly:  true,
-							},
-						},
-						Env: []corev1.EnvVar{
-							{
-								Name:  "EDGE_DEPLOYMENT_TAG",
-								Value: labels[controllers.EdgeTagLabel],
-							},
-							{
-								Name:  "PROMETHEUS_URL",
-								Value: edge.Spec.Prometheus.URL,
-							},
-							{
-								Name:  "HTTP_PROXY",
-								Value: edge.Spec.Proxy.HttpProxy,
-							},
-							{
-								Name:  "HTTPS_PROXY",
-								Value: edge.Spec.Proxy.HttpsProxy,
-							},
-							{
-								Name:  "NO_PROXY",
-								Value: edge.Spec.Proxy.NoProxy,
 							},
 						},
 					},
@@ -546,6 +534,10 @@ func (r *EdgeReconciler) buildDeployment(namespacedName, namespacedSecretName ty
 							},
 						},
 					},
+				},
+				// experiments: temporary
+				NodeSelector: map[string]string{
+					"edge.jevv.dev/role": "master",
 				},
 			},
 		},

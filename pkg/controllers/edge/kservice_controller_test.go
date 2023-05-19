@@ -16,6 +16,7 @@ import (
 
 	"edge.jevv.dev/pkg/controllers"
 	edgecontrollers "edge.jevv.dev/pkg/controllers"
+	"edge.jevv.dev/pkg/controllers/utils"
 )
 
 var _ = Describe("knative service controller", func() {
@@ -264,7 +265,7 @@ var _ = Describe("knative service controller", func() {
 			revision := &servingv1.Revision{}
 
 			Eventually(func() error {
-				return edgeClusterClient.Get(ctx, getConfigurationNamespacedName(namespacedName), revision)
+				return edgeClusterClient.Get(ctx, utils.GetConfigurationNamespacedName(namespacedName), revision)
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -321,7 +322,7 @@ var _ = Describe("knative service controller", func() {
 			revision := &servingv1.Revision{}
 
 			Eventually(func() error {
-				return edgeClusterClient.Get(ctx, getConfigurationNamespacedName(namespacedName), revision)
+				return edgeClusterClient.Get(ctx, utils.GetConfigurationNamespacedName(namespacedName), revision)
 			}, timeout, interval).Should(Succeed())
 
 			Expect(remoteClusterClient.Get(ctx, namespacedName, service)).Should(Succeed())
@@ -337,7 +338,7 @@ var _ = Describe("knative service controller", func() {
 			}, revisionTimeout, interval).Should(Succeed())
 
 			Eventually(func() error {
-				if err := edgeClusterClient.Get(ctx, getConfigurationNamespacedName(namespacedName), revision); err != nil && apierrors.IsNotFound(err) {
+				if err := edgeClusterClient.Get(ctx, utils.GetConfigurationNamespacedName(namespacedName), revision); err != nil && apierrors.IsNotFound(err) {
 					return nil
 				}
 

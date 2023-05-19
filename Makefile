@@ -3,10 +3,11 @@
 BASE_CMD ?= edge.jevv.dev/cmd
 PKG ?= ${BASE_CMD}/controller
 IMG ?= ko://${PKG}
-REPO ?= kind.local
+REPO ?= ghcr.io/jevvk/knative-edge
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
-PKG_VERSION ?= 1.0.0a1
+PKG_VERSION ?= 1.0.0-alpha.0
+DEPLOY_BUILD ?= false
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -105,11 +106,11 @@ build: generate fmt vet kustomize ## Build, push, and generate release YAML file
 	rm -rf build/release/*
 
 	$(KUSTOMIZE) build config/default/cloud \
-		| KO_DOCKER_REPO=$(REPO) ko resolve -B --platform linux/amd64,linux/arm64,linux/arm -f - \
+		| KO_DOCKER_REPO=$(REPO) ko resolve -B --tag-only --tags latest --tags $(PKG_VERSION) --push=$(DEPLOY_BUILD) --platform linux/amd64,linux/arm64,linux/arm -f - \
 		> build/release/knative-edge-$(PKG_VERSION)-cloud-deployment.yaml
 	
 	$(KUSTOMIZE) build config/default/edge \
-		| KO_DOCKER_REPO=$(REPO) ko resolve -B --platform linux/amd64,linux/arm64,linux/arm -f - \
+		| KO_DOCKER_REPO=$(REPO) ko resolve -B --tag-only --tags latest --tags $(PKG_VERSION) --push=$(DEPLOY_BUILD) --platform linux/amd64,linux/arm64,linux/arm -f - \
 		> build/release/knative-edge-$(PKG_VERSION)-edge-deployment.yaml
 
 .PHONY: build-local

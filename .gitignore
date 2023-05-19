@@ -34,3 +34,6 @@ e2e/tmp
 build/
 cmd/test/
 tmp/
+
+
+**/__pycache__/

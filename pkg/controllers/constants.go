@@ -28,7 +28,7 @@ const (
 )
 
 const (
-	EdgeOffloadOptionsAnnotation = "edge.jevv.dev/edge-offload-options"
+	EdgeFixedTrafficAnnotation   = "edge.jevv.dev/edge-offload-fixed-traffic"
 	EdgeOffloadLastRunAnnotation = "edge.jevv.dev/edge-offload-last-run"
 	EdgeProxyTrafficAnnotation   = "edge.jevv.dev/edge-proxy-traffic"
 	ObservedGenerationAnnotation = "edge.jevv.dev/observed-generation"

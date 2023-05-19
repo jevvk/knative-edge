@@ -8,9 +8,9 @@ import (
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-type TrafficResult int
+type TrafficAction int
 
-func (r TrafficResult) String() string {
+func (r TrafficAction) String() string {
 	switch r {
 	case IncreaseTraffic:
 		return "IncreaseTraffic"
@@ -18,21 +18,26 @@ func (r TrafficResult) String() string {
 		return "DecreaseTraffic"
 	case PreserveTraffic:
 		return "PreserveTraffic"
+	case SetTraffic:
+		return "SetTraffic"
 	default:
 		return "unknown"
 	}
 }
 
 const (
-	IncreaseTraffic = iota
+	PreserveTraffic = iota
+	IncreaseTraffic
 	DecreaseTraffic
-	PreserveTraffic
+	SetTraffic
 )
 
 type WorkOffloadServiceResult struct {
 	Name    types.NamespacedName
 	Service *servingv1.Service
-	Result  TrafficResult
+
+	Action         TrafficAction
+	DesiredTraffic int64
 }
 
 type WorkOffloadStrategy interface {

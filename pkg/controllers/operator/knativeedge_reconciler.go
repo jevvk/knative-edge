@@ -3,6 +3,8 @@ package operator
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -157,6 +159,9 @@ func (r *EdgeReconciler) reconcileCluster(ctx context.Context, edge *operatorv1a
 			}
 
 			kubeconfig, err := config.ClientConfig()
+			kubeconfig.Proxy = func(req *http.Request) (*url.URL, error) {
+				return url.Parse(edge.Spec.Proxy.HttpsProxy)
+			}
 
 			if err != nil {
 				r.Recorder.Event(edge, "Warning", "KubeconfigParsingError", fmt.Sprintf("Kubeconfig couldn't be retrieved: %s", err))

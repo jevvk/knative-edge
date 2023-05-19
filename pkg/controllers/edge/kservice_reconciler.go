@@ -85,6 +85,15 @@ func (r *KServiceReconciler) reconcileKService(ctx context.Context, service *ser
 		}
 	}
 
+	// override with fixed traffic
+	if fixedTraffic, exists := service.Annotations[controllers.EdgeFixedTrafficAnnotation]; exists {
+		fixedTrafficSplit, err := strconv.ParseInt(fixedTraffic, 10, 64)
+
+		if err == nil {
+			trafficSplit = fixedTrafficSplit
+		}
+	}
+
 	traffic := make([]servingv1.TrafficTarget, 0, 1)
 
 	// ensure latest target is specified

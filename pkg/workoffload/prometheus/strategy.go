@@ -206,7 +206,7 @@ func (s *PrometheusStrategy) updateKServiceUsage(ctx context.Context, cluster *u
 		service := cluster.AddKService(serviceName, namespace)
 
 		service.UpdateWithPercentileRatio(data.Data)
-		// debug.Info("debug revision", "namespace", namespace, "service", serviceName, "metric", data.Metric, "data", data.Data)
+		debug.Info("debug revision", "namespace", namespace, "service", serviceName, "metric", data.Metric, "data", data.Data)
 	}
 
 	return nil
@@ -219,46 +219,43 @@ func (s *PrometheusStrategy) GetResults(services []servingv1.Service) []strategy
 	ret := make([]strategy.WorkOffloadServiceResult, 0, len(services))
 
 	for _, service := range services {
-		var result strategy.TrafficResult = strategy.DecreaseTraffic
+		var action strategy.TrafficAction = strategy.PreserveTraffic
+		var desiredTraffic int64 = -1
 		serviceName := types.NamespacedName{Name: service.Name, Namespace: service.Namespace}
 
 		serviceUsage, exists := s.cluster.Services[serviceName.String()]
 
 		// don't update traffic if service not in usage
 		if exists {
-			if serviceUsage.CpuPressure == usage.HighPressure {
-				result = strategy.IncreaseTraffic
-			} else if serviceUsage.MemoryPressure == usage.HighPressure {
-				result = strategy.IncreaseTraffic
-			} else if serviceUsage.RequestLatencyPressure == usage.HighPressure {
-				result = strategy.IncreaseTraffic
+			// FIXME: this is ugly
+			serviceUsage.UpdateWithKService(service)
+			serviceUsage.FinalizeKServiceMetrics()
+
+			action = strategy.SetTraffic
+
+			if serviceUsage.RequestLatency < serviceUsage.RequestLatencySoftLimit {
+				desiredTraffic = 0
+			} else if serviceUsage.RequestLatency >= serviceUsage.RequestLatencyHardLimit {
+				desiredTraffic = 100
+			} else {
+				limitDiff := serviceUsage.RequestLatencyHardLimit - serviceUsage.RequestLatencySoftLimit
+				overSoftLimit := (serviceUsage.RequestLatency - serviceUsage.RequestLatencySoftLimit) / limitDiff
+
+				desiredTraffic = int64(100.0 * overSoftLimit)
 			}
 		}
 
-		// cluster pressure overrides service pressure
-		if s.cluster.CpuPressure == usage.HighPressure {
-			result = strategy.IncreaseTraffic
-		} else if s.cluster.MemoryPressure == usage.HighPressure {
-			result = strategy.IncreaseTraffic
-		}
-
-		if serviceUsage == nil && result == strategy.IncreaseTraffic {
-			result = strategy.PreserveTraffic
-		}
-
-		if result == strategy.DecreaseTraffic {
-			// TODO: only decrease traffic after a cooldown period
-		}
-
 		ret = append(ret, strategy.WorkOffloadServiceResult{
-			Name:    serviceName,
-			Service: &service,
-			Result:  result,
+			Name:           serviceName,
+			Service:        &service,
+			Action:         action,
+			DesiredTraffic: desiredTraffic,
 		})
 
 		if serviceUsage != nil {
 			debug.Info("debug results cluster", "service", serviceName, "clusterCpuPressure", s.cluster.CpuPressure, "clusterMemoryPressure", s.cluster.MemoryPressure)
-			debug.Info("debug results service", "service", serviceName, "cpuPressure", serviceUsage.CpuPressure, "memoryPressure", serviceUsage.MemoryPressure, "reqPressure", serviceUsage.RequestLatencyPressure)
+			debug.Info("debug results service", "service", serviceName, "serviceUsage", serviceUsage)
+			debug.Info("debug results service", "service", serviceName, "annotations", service.Annotations)
 		}
 
 	}

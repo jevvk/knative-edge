@@ -246,26 +246,38 @@ func (t *EdgeWorkOffload) run(ctx context.Context, services []servingv1.Service)
 			traffic = 0
 		}
 
-		switch result.Result {
+		switch result.Action {
+		case strategy.PreserveTraffic:
+			continue
+		case strategy.SetTraffic:
+			inertia := strategy.TrafficInertiaDefaultValue
+			annotations := result.Service.Annotations
+
+			if annotations == nil {
+				annotations = make(map[string]string)
+			}
+
+			if inertiaAnnotation := annotations[strategy.TrafficInertiaAnnotation]; inertiaAnnotation != "" {
+				if inertiaValue, err := strconv.ParseFloat(inertiaAnnotation, 32); err == nil {
+					inertia = float32(inertiaValue)
+				}
+			}
+
+			traffic = int64(float32(traffic)*inertia + float32(result.DesiredTraffic)*(1-inertia))
 		case strategy.IncreaseTraffic:
 			traffic += 10
-
-			if traffic > 100 {
-				traffic = 100
-			}
-
-			t.Store.Set(result.Name.String(), traffic)
 		case strategy.DecreaseTraffic:
 			traffic -= 2
-
-			if traffic < 0 {
-				traffic = 0
-			}
-
-			t.Store.Set(result.Name.String(), traffic)
 		}
 
-		debug.Info("debug results", "name", result.Name, "result", result.Result, "traffic", traffic)
+		if traffic > 100 {
+			traffic = 100
+		} else if traffic < 0 {
+			traffic = 0
+		}
+
+		t.Store.Set(result.Name.String(), traffic)
+		debug.Info("debug results", "name", result.Name, "action", result.Action, "traffic", traffic)
 	}
 
 	return nil

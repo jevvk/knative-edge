@@ -98,6 +98,20 @@ func (r *KServiceReconciler) kindMerger(src, dst *servingv1.Service) error {
 
 	annotations[controllers.RemoteUrlAnnotation] = r.RemoteUrl
 
+	srcAnnotations := src.Annotations
+
+	if srcAnnotations == nil {
+		srcAnnotations = make(map[string]string)
+	}
+
+	for key, value := range srcAnnotations {
+		if !strings.HasPrefix(key, "edge.jevv.dev/") && !strings.HasPrefix(key, "strategy.edge.jevv.dev/") {
+			continue
+		}
+
+		annotations[key] = value
+	}
+
 	specLabels := dst.Spec.ConfigurationSpec.Template.Labels
 
 	if specLabels == nil {

@@ -220,5 +220,6 @@ func (r *KServiceReconciler) buildConfiguration(namespacedName types.NamespacedN
 		configuration.Spec.Template.Annotations = specAnnotations
 	}
 
-	specAnnotations["autoscaling.knative.dev/min-scale"] = "2"
+	specAnnotations["autoscaling.knative.dev/min-scale"] = "3"
+	specAnnotations["autoscaling.knative.dev/max-scale"] = "5"
 }

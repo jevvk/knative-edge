@@ -1,0 +1,25 @@
+builds:
+- id: helloworld-go
+  dir: .
+  main: ./cmd/helloworld-go
+  ldflags:
+  - -s
+  - -w
+- id: worker-image-processing
+  dir: .
+  main: ./cmd/worker-image-processing
+  ldflags:
+  - -s
+  - -w
+- id: worker-matrix-multiply
+  dir: .
+  main: ./cmd/worker-matrix-multiply
+  ldflags:
+  - -s
+  - -w
+- id: worker-random-io
+  dir: .
+  main: ./cmd/worker-random-io
+  ldflags:
+  - -s
+  - -w

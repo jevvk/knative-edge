@@ -1,0 +1,164 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hello
+  namespace: edge-default-env
+  labels:
+    edge.jevv.dev/environment: default
+    edge.jevv.dev/edge-offload: "true"
+  annotations:
+    edge.jevv.dev/edge-offload-fixed-traffic: "0"
+    strategy.edge.jevv.dev/traffic-inertia: "0.6667"
+    strategy.edge.jevv.dev/latency-ratio-soft-limit: "1.25"
+    strategy.edge.jevv.dev/latency-ratio-hard-limit: "2.0"
+    strategy.edge.jevv.dev/latency-ratio-decay: "0.5"
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/target: "4"
+        autoscaling.knative.dev/max-scale: "8"
+    spec:
+      containerConcurrency: 8
+      containers:
+      - image: europe-west4-docker.pkg.dev/jappy-8418e/jappy/helloworld-go:20861cb4-0
+        name: user-container
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: K_NODES_MAP
+          value: "edge-rpi3 100.88.114.4 edge-rpi1 100.88.114.2 edge-rpi0 100.88.114.254 edge-rpi2 100.88.114.3 edge-surface-go 100.88.114.7 cloud-gorth-yal 167.235.128.5" # DONOTCHANGE: K_NODES_MAP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        # envFrom:
+        # - configMapRef:
+        #     name: hellotest
+        # - secretRef:
+        #     name: hellotest
+      timeoutSeconds: 300
+      nodeSelector:
+        edge.jevv.dev/role: worker
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: experiment-imgproc
+  namespace: edge-default-env
+  labels:
+    edge.jevv.dev/environment: default
+    edge.jevv.dev/edge-offload: "true"
+  annotations:
+    edge.jevv.dev/edge-offload-fixed-traffic: "0"
+    strategy.edge.jevv.dev/traffic-inertia: "0.6667"
+    strategy.edge.jevv.dev/latency-ratio-soft-limit: "1.25"
+    strategy.edge.jevv.dev/latency-ratio-hard-limit: "2.0"
+    strategy.edge.jevv.dev/latency-ratio-decay: "0.5"
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/target: "4"
+        autoscaling.knative.dev/max-scale: "8"
+    spec:
+      containerConcurrency: 8
+      containers:
+      - image: europe-west4-docker.pkg.dev/jappy-8418e/jappy/worker-image-processing:20861cb4-0
+        name: user-container
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: K_NODES_MAP
+          value: "edge-rpi3 100.88.114.4 edge-rpi1 100.88.114.2 edge-rpi0 100.88.114.254 edge-rpi2 100.88.114.3 edge-surface-go 100.88.114.7 cloud-gorth-yal 167.235.128.5" # DONOTCHANGE: K_NODES_MAP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+      timeoutSeconds: 300
+      nodeSelector:
+        edge.jevv.dev/role: worker
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: experiment-matmult
+  namespace: edge-default-env
+  labels:
+    edge.jevv.dev/environment: default
+    edge.jevv.dev/edge-offload: "true"
+  annotations:
+    edge.jevv.dev/edge-offload-fixed-traffic: "0"
+    strategy.edge.jevv.dev/traffic-inertia: "0.6667"
+    strategy.edge.jevv.dev/latency-ratio-soft-limit: "1.25"
+    strategy.edge.jevv.dev/latency-ratio-hard-limit: "2.0"
+    strategy.edge.jevv.dev/latency-ratio-decay: "0.5"
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/target: "4"
+        autoscaling.knative.dev/max-scale: "8"
+    spec:
+      containerConcurrency: 8
+      containers:
+      - image: europe-west4-docker.pkg.dev/jappy-8418e/jappy/worker-matrix-multiply:20861cb4-0
+        name: user-container
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: K_NODES_MAP
+          value: "edge-rpi3 100.88.114.4 edge-rpi1 100.88.114.2 edge-rpi0 100.88.114.254 edge-rpi2 100.88.114.3 edge-surface-go 100.88.114.7 cloud-gorth-yal 167.235.128.5" # DONOTCHANGE: K_NODES_MAP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+      timeoutSeconds: 300
+      nodeSelector:
+        edge.jevv.dev/role: worker
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: experiment-rndio
+  namespace: edge-default-env
+  labels:
+    edge.jevv.dev/environment: default
+    edge.jevv.dev/edge-offload: "true"
+  annotations:
+    edge.jevv.dev/edge-offload-fixed-traffic: "0"
+    strategy.edge.jevv.dev/traffic-inertia: "0.6667"
+    strategy.edge.jevv.dev/latency-ratio-soft-limit: "1.25"
+    strategy.edge.jevv.dev/latency-ratio-hard-limit: "2.0"
+    strategy.edge.jevv.dev/latency-ratio-decay: "0.5"
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/target: "4"
+        autoscaling.knative.dev/max-scale: "8"
+    spec:
+      containerConcurrency: 8
+      containers:
+      - image: europe-west4-docker.pkg.dev/jappy-8418e/jappy/worker-random-io:20861cb4-0
+        name: user-container
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: K_NODES_MAP
+          value: "edge-rpi3 100.88.114.4 edge-rpi1 100.88.114.2 edge-rpi0 100.88.114.254 edge-rpi2 100.88.114.3 edge-surface-go 100.88.114.7 cloud-gorth-yal 167.235.128.5" # DONOTCHANGE: K_NODES_MAP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+      timeoutSeconds: 300
+      nodeSelector:
+        edge.jevv.dev/role: worker
